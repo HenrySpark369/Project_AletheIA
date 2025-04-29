@@ -47,3 +47,4 @@ __MACOSX/
 # Otros específicos del proyecto (si generas exportaciones u outputs)
 output/
 static/uploads/
+errores_bloques.txt

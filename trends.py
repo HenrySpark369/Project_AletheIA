@@ -99,11 +99,7 @@ def obtener_tema_en_tendencia_desde_cache(tipo_agente, geo="MX-DIF", ttl_horas=1
                     top_tema = obtener_tema(tipo_agente)
 
                 # Guardar en caché el nuevo tema
-                c.execute('''
-                    INSERT INTO tendencias_cache (tipo_agente, tema, resultado, actualizado_en)
-                    VALUES (?, ?, ?, ?)
-                ''', (tipo_agente, top_tema, top_tema, ahora.isoformat()))
-                conn.commit()
+                guardar_tema_en_cache(tipo_agente, top_tema)
 
                 print(f"[CACHE] Tema guardado para {tipo_agente}: {top_tema}")
                 return top_tema
@@ -174,28 +170,52 @@ def consultar_bloque(pytrends, bloque, geo, max_retries=3):
     traceback.print_exc()
     return None
 
-def tendencias(tipo_agente=None, geo="MX"):
+def guardar_tema_en_cache(tipo_agente, tema, promedio=None, ultimo_valor=None):
+    try:
+        ahora = datetime.now().isoformat()
+        with sqlite3.connect("database.db", timeout=60) as conn:
+            c = conn.cursor()
+            c.execute("""
+                INSERT OR REPLACE INTO tendencias_cache 
+                (tipo_agente, tema, resultado, actualizado_en, promedio, ultimo_valor)
+                VALUES (?, ?, ?, ?, ?, ?)
+            """, (
+                tipo_agente,
+                tema,
+                tema,  # puedes reemplazar esto con JSON si `resultado` es más complejo
+                ahora,
+                promedio,
+                ultimo_valor
+            ))
+            conn.commit()
+            print(f"[CACHE] Tema guardado en cache: {tema} (Prom={promedio}, Último={ultimo_valor})")
+    except sqlite3.Error as e:
+        print(f"[ERROR] No se pudo guardar el tema en cache: {e}")
+
+def tendencias(tipo_agente=None, geo="MX", max_bloques=5):
     pytrends = TrendReq(
         hl='es-MX',
         tz=360,
         timeout=(5, 10),
-        retries=6,
+        retries=3,
         backoff_factor=0.3,
         requests_args={'headers': {'User-Agent': 'Mozilla/5.0'}}
     )
     ranking = {}
-    
-    # Combina temas comunes y los del tipo de agente
+
     temas_tipo = temas_por_tipo.get(tipo_agente, [])
     lista_temas = list(set(temas_comunes + temas_tipo))  # Sin duplicados
+    random.shuffle(lista_temas)
 
+    bloques_procesados = 0
     for i in range(0, len(lista_temas), 5):
+        if bloques_procesados >= max_bloques:
+            break
+
         bloque = lista_temas[i:i+5]
         interes_tiempo = consultar_bloque(pytrends, bloque, geo)
 
         if interes_tiempo is None:
-            with open("errores_bloques.txt", "a") as f:
-                f.write(f"{bloque}\n")
             continue
 
         for tema in bloque:
@@ -206,7 +226,11 @@ def tendencias(tipo_agente=None, geo="MX"):
                     "promedio": promedio,
                     "ultimo_valor": ultimo_valor
                 }
-        time.sleep(5)  # Pausa general entre bloques exitosos.
+                # Guardar en cache SQLite
+                guardar_tema_en_cache(tipo_agente, tema, promedio=promedio, ultimo_valor=ultimo_valor)
+
+        bloques_procesados += 1
+        time.sleep(60)  # pausa para evitar bloqueo
 
     if ranking:
         ranking_ordenado = sorted(ranking.items(), key=lambda x: x[1]["promedio"], reverse=True)
@@ -214,5 +238,5 @@ def tendencias(tipo_agente=None, geo="MX"):
         print(f"[TOP] Tema más relevante: {top_tema} (Promedio={datos['promedio']:.2f}, Último valor={datos['ultimo_valor']})")
         return top_tema
     else:
-        print("[INFO] No se obtuvieron datos relevantes. Usando tema de respaldo.")
-        return obtener_tema(tipo_agente)  # Fallback si todo falla
+        print("[FALLBACK] No se obtuvieron datos relevantes. Usando tema aleatorio.")
+        return obtener_tema(tipo_agente)

@@ -44,18 +44,26 @@ def init_db():
             );
         """)
 
-        # ⚠️ Nueva tabla para caché de tendencias
+        # Tabla tendencias_cache extendida
         c.execute("""
             CREATE TABLE IF NOT EXISTS tendencias_cache (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 tipo_agente TEXT NOT NULL,
                 tema TEXT NOT NULL,
-                resultado TEXT,  -- Puede ser JSON serializado o string plano
-                actualizado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                resultado TEXT,
+                actualizado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                promedio REAL,              -- Nuevo campo: score promedio
+                ultimo_valor REAL           -- Nuevo campo: valor más reciente
             );
         """)
 
-        # Índices opcionales para acelerar búsquedas
+        # Restricción opcional para evitar duplicados por tipo_agente + tema
+        c.execute("""
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_tendencia_unica 
+            ON tendencias_cache (tipo_agente, tema);
+        """)
+
+        # Índices para acelerar búsqueda y ordenamiento
         c.execute("CREATE INDEX IF NOT EXISTS idx_posts_agente_id ON posts (agente_id);")
         c.execute("CREATE INDEX IF NOT EXISTS idx_posts_created_at ON posts (created_at);")
         c.execute("CREATE INDEX IF NOT EXISTS idx_tendencias_tipo ON tendencias_cache (tipo_agente);")

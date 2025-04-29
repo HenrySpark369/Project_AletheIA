@@ -1,0 +1,49 @@
+# Bytecode y cachés de Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+
+# Archivos ocultos de macOS
+.DS_Store
+
+# Entornos virtuales
+env/
+venv/
+ENV/
+.venv/
+
+# Variables de entorno
+.env
+
+# Base de datos SQLite (opcional: puedes rastrearla si lo deseas)
+*.db
+
+# Archivos de configuración de editores/IDE
+.vscode/
+.idea/
+
+# Archivos temporales
+*.log
+*.tmp
+*.bak
+*.swp
+*.swo
+
+# Archivos de prueba generados
+*.coverage
+htmlcov/
+.cache/
+.tox/
+
+# Paquetes instalados
+__MACOSX/
+
+# Archivos comprimidos o exportados
+*.zip
+*.tar.gz
+
+# Otros específicos del proyecto (si generas exportaciones u outputs)
+output/
+static/uploads/

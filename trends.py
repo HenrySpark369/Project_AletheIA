@@ -156,30 +156,30 @@ import json
 from pytrends.request import TrendReq
 import time
 
+import traceback
+
 def consultar_bloque(pytrends, bloque, geo, max_retries=3):
     for intento in range(max_retries):
         try:
             pytrends.build_payload(bloque, cat=0, timeframe='now 7-d', geo=geo, gprop='')
             interes_tiempo = pytrends.interest_over_time()
             if interes_tiempo.empty:
-                raise Exception("Respuesta vacía")
+                raise Exception(f"Respuesta vacía para bloque {bloque}")
             return interes_tiempo
         except Exception as e:
-            if "429" in str(e) or "Rate limit" in str(e) or "timed out" in str(e) or "vacía" in str(e):
-                espera = 10 * (intento + 1)
-                print(f"[RETRY {intento+1}] Esperando {espera} segundos por límite o error temporal...")
-                time.sleep(espera)
-            else:
-                print(f"[ERROR] Error inesperado al consultar bloque {bloque}: {e}")
-                break
+            espera = 10 * (intento + 1)
+            print(f"[RETRY {intento+1}] Esperando {espera} segundos por: {e}")
+            time.sleep(espera)
     print(f"[ERROR] Fallo definitivo al consultar bloque {bloque} después de {max_retries} intentos.")
+    traceback.print_exc()
     return None
 
 def tendencias(tipo_agente=None, geo="MX"):
     pytrends = TrendReq(
         hl='es-MX',
         tz=360,
-        retries=3,
+        timeout=(5, 10),
+        retries=6,
         backoff_factor=0.3,
         requests_args={'headers': {'User-Agent': 'Mozilla/5.0'}}
     )
@@ -194,10 +194,12 @@ def tendencias(tipo_agente=None, geo="MX"):
         interes_tiempo = consultar_bloque(pytrends, bloque, geo)
 
         if interes_tiempo is None:
+            with open("errores_bloques.txt", "a") as f:
+                f.write(f"{bloque}\n")
             continue
 
         for tema in bloque:
-            if tema in interes_tiempo:
+            if tema in interes_tiempo and not interes_tiempo[tema].empty:
                 promedio = interes_tiempo[tema].mean()
                 ultimo_valor = interes_tiempo[tema].iloc[-1]
                 ranking[tema] = {

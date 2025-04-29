@@ -287,13 +287,12 @@ def agente_fragment(agente_id):
             WHERE agente_id = ? 
             ORDER BY id DESC
         """, (agente_id,)).fetchall()
-        conn.commit()
     return render_template("partials/agente_posts.html", posts=posts)
 
 @app.route('/cargar_agentes_demo', methods=['POST'])
 def cargar_agentes_demo():
     with db_lock:
-        agentes = [
+        lista_agentes = [
             ("Musa Rebelde", 27, "moda, feminismo, arte urbano", "apasionado", "generar conciencia", "normal"),
             ("Thaddeus Ross", 34, "política, defensa, debates", "serio", "influir en la opinión pública", "normal"),
             ("Dua Lupita", 22, "Dua, maquillaje, tutoriales, tiktok", "juvenil", "entretener y ganar seguidores", "imitador"),
@@ -306,47 +305,52 @@ def cargar_agentes_demo():
             ("ManagerX", 40, "coaching, negocios, empoderamiento", "motivacional", "atraer clientes", "normal"),
             ("Daily Buggle", 50, "noticias, ultima hora, tendencias", "atractivo, agresivo contra el hombre el araña", "tener al hombre araña en primera plana", "normal")
         ]
+        agentes_guardados = []
+        try:
+            with sqlite3.connect("database.db", timeout=60) as conn:
+                c = conn.cursor()
+                for a in lista_agentes:
+                    c.execute("INSERT INTO agentes (nombre, edad, intereses, tono, objetivo, tipo_agente) VALUES (?, ?, ?, ?, ?, ?)", a)
+                    agente_id = c.lastrowid
 
-        with sqlite3.connect("database.db", timeout=60) as conn:
-            c = conn.cursor()
-            agentes_guardados = []
+                    # Crear post usando OpenAI
+                    agente_dict = {
+                        "id": agente_id,
+                        "nombre": a[0],
+                        "edad": a[1],
+                        "intereses": a[2],
+                        "tono": a[3],
+                        "objetivo": a[4],
+                        "tipo_agente": a[5]
+                    }
+                    agentes_guardados.append(agente_dict)
 
-            for a in agentes:
-                c.execute("INSERT INTO agentes (nombre, edad, intereses, tono, objetivo, tipo_agente) VALUES (?, ?, ?, ?, ?, ?)", a)
-                agente_id = c.lastrowid
+                # Usar simulador para generar publicaciones iniciales
+                simulador = SimuladorDeAgentes(agentes_guardados)
+                publicaciones = simulador.simular_paso()
+                
+                # Agrupar e insertar todas las publicaciones
+                datos_posts_demo = [
+                    (pub["agente_id"], pub["contenido"], pub["timestamp"])
+                    for pub in publicaciones
+                ]
 
-                # Crear post usando OpenAI
-                agente_dict = {
-                    "id": agente_id,
-                    "nombre": a[0],
-                    "edad": a[1],
-                    "intereses": a[2],
-                    "tono": a[3],
-                    "objetivo": a[4],
-                    "tipo_agente": a[5]
-                }
-                agentes_guardados.append(agente_dict)
+                c.executemany(
+                    "INSERT INTO posts (agente_id, contenido, created_at) VALUES (?, ?, ?)",
+                    datos_posts_demo
+                )
 
-            # Usar simulador para generar publicaciones iniciales
-            simulador = SimuladorDeAgentes(agentes_guardados)
-            publicaciones = simulador.simular_paso()
-            
-            # Agrupar e insertar todas las publicaciones
-            datos_posts_demo = [
-                (pub["agente_id"], pub["contenido"], pub["timestamp"])
-                for pub in publicaciones
-            ]
-
-            c.executemany(
-                "INSERT INTO posts (agente_id, contenido, created_at) VALUES (?, ?, ?)",
-                datos_posts_demo
-            )
-
-            for pub in publicaciones:
-                print(f"[SIM-DEMO] {pub['agente_id']} publicó '{pub['tema']}'")
-            
-            conn.commit()
-        return redirect('/agentes')
+                for pub in publicaciones:
+                    print(f"[SIM-DEMO] {pub['agente_id']} publicó '{pub['tema']}'")
+                conn.commit()
+            return jsonify({
+                "status": "success",
+                "message": "Agentes de demostración cargados correctamente.",
+                "agentes_creados": len(agentes_guardados),
+                "posts_generados": len(publicaciones)
+            }), 201
+        except Exception as e:
+            return jsonify({"status": "error", "message": str(e)}), 500
 
 @app.route('/limpiar_agentes', methods=['POST'])
 def limpiar_agentes():
@@ -391,7 +395,7 @@ def feed_fragment():
 from trends import tendencias
 
 @app.route("/tendencias", methods=["GET", "POST"])
-def tendencias():
+def ver_tendencias():
     resultados = None
     cache = []
     if request.method == "POST":
@@ -409,9 +413,15 @@ def tendencias():
                     WHERE actualizado_en >= datetime('now', '-6 hours')
                     ORDER BY actualizado_en DESC
                 ''').fetchall()
-                conn.commit()
         else:
             resultados = tendencias(tema, geo)
+            with sqlite3.connect("database.db", timeout=60) as conn:
+                c = conn.cursor()
+                c.execute("""
+                    INSERT INTO tendencias_cache (tipo_agente, tema, resultado)
+                    VALUES (?, ?, ?)
+                """, ("general", tema, str(resultados)))
+                conn.commit()
     
     return render_template("tendencias.html", resultados=resultados, cache=cache)
 

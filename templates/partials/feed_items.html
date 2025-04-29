@@ -1,0 +1,7 @@
+{% if posts %}
+    {% for post, nombre, created_at in posts %}
+    <div data-timestamp="{{ created_at }}">
+        <p><strong>{{ nombre }}</strong>: <small>{{ created_at | datetimeformat }}</small><br>{{ post }}</p>
+    </div>
+    {% endfor %}
+{% endif %}

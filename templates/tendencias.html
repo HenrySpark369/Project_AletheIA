@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Gestión de Tendencias</h2>
+<form method="POST">
+  <input type="text" name="tema" placeholder="Ej. Inteligencia Artificial">
+  <input type="text" name="geo" value="MX-DIF" placeholder="Código de país (MX, US, ES)">
+  <button type="submit">Consultar Tendencia</button>
+</form>
+
+<h3>Tendencias Cacheadas Recientes:</h3>
+{% if cache %}
+  <ul>
+    {% for item in cache %}
+      <li>{{ item["tipo_agente"] }} - {{ item["tema"] }} → {{ item["resultado"] }} ({{ item["actualizado_en"] | datetimeformat }})</li>
+    {% endfor %}
+  </ul>
+{% else %}
+  <p>No hay tendencias cacheadas recientes.</p>
+{% endif %}
+{% endblock %}

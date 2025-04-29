@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block content %}
+
+    <head>
+        <title>Muro de {{ agente[1] }}</title>
+        <script>
+            function actualizarMuro() {
+                fetch('/agente_fragment/{{ agente[0] }}')
+                    .then(response => response.text())
+                    .then(html => {
+                        document.getElementById('muro-container').innerHTML = html;
+                    });
+            }
+    
+            setInterval(actualizarMuro, 5000); // actualiza cada 15 segundos
+            window.onload = actualizarMuro;
+        </script>
+    </head>
+<body>
+<h2>Muro de {{ agente[1] }}</h2>
+<p><strong>Tipo:</strong> {{ agente[6] }} | <strong>Intereses:</strong> {{ agente[3] }}</p>
+
+<form method="post">
+    <button type="submit">📝 Generar nueva publicación</button>
+</form>
+
+<hr>
+<div id="muro-container">
+    <p>Cargando publicaciones...</p>
+</div>
+
+<a href="/agentes">← Volver a lista de agentes</a>
+</body>
+{% endblock %}

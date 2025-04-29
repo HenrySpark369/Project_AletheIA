@@ -1,0 +1,23 @@
+<!doctype html>
+<html>
+<head><title>Editar agente</title></head>
+<body>
+<h2>Editar agente</h2>
+<form method="post">
+    Nombre: <input name="nombre" value="{{ agente[1] }}"><br>
+    Edad: <input name="edad" type="number" value="{{ agente[2] }}"><br>
+    Intereses: <input name="intereses" value="{{ agente[3] }}"><br>
+    Tono: <input name="tono" value="{{ agente[4] }}"><br>
+    Objetivo: <input name="objetivo" value="{{ agente[5] }}"><br>
+    Tipo:
+    <select name="tipo_agente">
+        <option {% if agente[6] == 'normal' %}selected{% endif %}>normal</option>
+        <option {% if agente[6] == 'troll' %}selected{% endif %}>troll</option>
+        <option {% if agente[6] == 'imitador' %}selected{% endif %}>imitador</option>
+        <option {% if agente[6] == 'observador' %}selected{% endif %}>observador</option>
+    </select><br>
+    <button type="submit">Guardar cambios</button>
+</form>
+<a href="/agentes">← Volver</a>
+</body>
+</html>

@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Agentes creados</h2>
+<table border="1" cellpadding="5">
+    <tr>
+        <th>ID</th><th>Nombre</th><th>Edad</th><th>Intereses</th>
+        <th>Tono</th><th>Objetivo</th><th>Tipo</th><th>Muro</th><th>Acciones</th>
+    </tr>
+    {% for agente in agentes %}
+    <tr>
+        <td>{{ agente[0] }}</td>
+        <td>{{ agente[1] }}</td>
+        <td>{{ agente[2] }}</td>
+        <td>{{ agente[3] }}</td>
+        <td>{{ agente[4] }}</td>
+        <td>{{ agente[5] }}</td>
+        <td>{{ agente[6] }}</td>
+        <td><a href="/agente/{{ agente[0] }}">🌐 Ver muro</a></td>
+        <td>
+            <form action="/eliminar_agente/{{ agente[0] }}" method="post" style="display:inline;">
+                <button type="submit" onclick="return confirm('¿Eliminar este agente?')">🗑 Eliminar</button>
+            </form>
+            <a href="/editar_agente/{{ agente[0] }}">✏️ Editar</a>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+{% endblock %}

@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block content %}
+<head><title>Nuevo agente</title></head>
+<body>
+<h2>Crear agente</h2>
+<form method="post">
+    Nombre: <input name="nombre"><br>
+    Edad: <input name="edad" type="number"><br>
+    Intereses: <input name="intereses"><br>
+    Tono: <input name="tono"><br>
+    Objetivo: <input name="objetivo"><br>
+    Tipo: <select name="tipo_agente">
+        <option>normal</option>
+        <option>troll</option>
+        <option>imitador</option>
+        <option>observador</option>
+    </select><br>
+    <button type="submit">Crear</button>
+</form>
+{% endblock %}

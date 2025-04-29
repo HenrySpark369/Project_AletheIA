@@ -1,0 +1,5 @@
+{% for contenido, created_at in posts %}
+    <p><small>{{ created_at | datetimeformat }}</small><br>{{ contenido }}</p>
+{% else %}
+    <p><i>Este agente aún no ha publicado nada.</i></p>
+{% endfor %}

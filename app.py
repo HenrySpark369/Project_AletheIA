@@ -302,16 +302,16 @@ def cargar_agentes_demo():
     with db_lock:
         lista_agentes = [
             ("Musa Rebelde", 27, "moda, feminismo, arte urbano", "apasionado", "generar conciencia", "normal"),
-            ("Thaddeus Ross", 34, "política, defensa, debates", "serio", "influir en la opinión pública", "normal"),
+            ("Thaddeus Ross", 60, "Seguridad nacional, control militar, captura de Hulk, poder, disciplina", "Autoritario, severo, inflexible, patriótico", "Proteger a México a toda costa, controlar o destruir a Hulk, mantener el orden mediante la fuerza", "observador"),
             ("Dua Lupita", 22, "Dua, maquillaje, tutoriales, tiktok", "juvenil", "entretener y ganar seguidores", "imitador"),
-            ("Dr. Connors", 49, "ciencia, reptiles, bioingeniería, edición genética", "Persona relevante en la ciencia", "avances de experimentación, tecnologia", "normal"),
+            ("Dr. Curt Connors", 49, "Ciencia, regeneración celular, genética, curación de enfermedades humanas, redención personal", "Trágico, racional, obsesivo, científico", "Sanar su propio cuerpo (recuperar su brazo perdido) y ayudar a la humanidad, aunque a veces se desvía por su transformación en el Lagarto", "normal"),
             ("El Crítico Anónimo", 38, "cine, política, redes sociales", "cínico", "causar controversia", "troll"),
             ("Beauty_Looks", 19, "influencers, moda, giveaways", "superficial", "atraer likes", "imitador"),
             ("Cryptoboy", 0, "criptomonedas, inteligencia artificial, tendencias", "técnico", "simular actividad real", "imitador"),
             ("PhotoStudio", 31, "fotografía, viajes, diseño", "inspirador", "mostrar estilo de vida", "observador"),
             ("Chayotito_tired", 20, "memes, universidad, quejas", "sarcástico", "hacer de mexico un lugar mejor", "troll"),
             ("ManagerX", 40, "coaching, negocios, empoderamiento", "motivacional", "atraer clientes", "normal"),
-            ("Daily Buggle", 50, "noticias, ultima hora, tendencias", "atractivo, agresivo contra el hombre el araña", "tener al hombre araña en primera plana", "normal")
+            ("Daily Buggle", 50, "Noticias sensacionalistas, escándalos, fotografía de Spider-Man, opinión pública, control mediático", "Sensacionalista, agresivo, amarillista, influyente", "Vender noticias, moldear la percepción pública (especialmente en contra de Spider-Man), mantener relevancia mediática", "troll")
         ]
         agentes_guardados = []
         try:
@@ -405,33 +405,42 @@ from trends import tendencias
 @app.route("/tendencias", methods=["GET", "POST"])
 def ver_tendencias():
     resultados = None
-    cache = []
+    tendencias_por_tipo = {}
+    mensaje = None
+
     if request.method == "POST":
         tema = request.form.get("tema", "").strip()
         geo = request.form.get("geo", "MX-DIF").strip()
 
         if not tema:
-            # Si no hay tema, buscar tendencias cacheadas recientes
-            with sqlite3.connect("database.db", timeout=60) as conn:
-                conn.row_factory = sqlite3.Row
-                c = conn.cursor()
-                cache = c.execute('''
-                    SELECT tipo_agente, tema, resultado, actualizado_en 
-                    FROM tendencias_cache
-                    WHERE actualizado_en >= datetime('now', '-6 hours')
-                    ORDER BY actualizado_en DESC
-                ''').fetchall()
+            mensaje = "Por favor ingresa un tema para buscar."
         else:
             resultados = tendencias(tema, geo)
             with sqlite3.connect("database.db", timeout=60) as conn:
                 c = conn.cursor()
                 c.execute("""
-                    INSERT INTO tendencias_cache (tipo_agente, tema, resultado)
-                    VALUES (?, ?, ?)
+                    INSERT OR REPLACE INTO tendencias_cache (tipo_agente, tema, resultado, actualizado_en)
+                    VALUES (?, ?, ?, CURRENT_TIMESTAMP)
                 """, ("general", tema, str(resultados)))
                 conn.commit()
-    
-    return render_template("tendencias.html", resultados=resultados, cache=cache)
+    else:
+        # GET → mostrar el dashboard de tendencias más recientes
+        with sqlite3.connect("database.db", timeout=60) as conn:
+            conn.row_factory = sqlite3.Row
+            c = conn.cursor()
+
+            filas = c.execute('''
+                SELECT tipo_agente, tema, promedio, ultimo_valor, actualizado_en
+                FROM tendencias_cache
+                WHERE actualizado_en >= datetime('now', '-6 hours')
+                ORDER BY tipo_agente, promedio DESC, actualizado_en DESC
+            ''').fetchall()
+
+        for row in filas:
+            tipo = row["tipo_agente"]
+            tendencias_por_tipo.setdefault(tipo, []).append(row)
+
+    return render_template("tendencias.html", resultados=resultados, tendencias=tendencias_por_tipo, mensaje=mensaje)
 
 if __name__ == '__main__':
     init_db()

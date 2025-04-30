@@ -1,20 +1,51 @@
 {% extends "base.html" %}
 {% block content %}
-<h2>Gestión de Tendencias</h2>
+<h1>🔍 Buscar o visualizar tendencias</h1>
+
 <form method="POST">
-  <input type="text" name="tema" placeholder="Ej. Inteligencia Artificial">
-  <input type="text" name="geo" value="MX-DIF" placeholder="Código de país (MX, US, ES)">
-  <button type="submit">Consultar Tendencia</button>
+    <label for="tema">Tema:</label>
+    <input type="text" name="tema" id="tema" placeholder="Ej. inteligencia artificial">
+    <label for="geo">Región (geo):</label>
+    <input type="text" name="geo" id="geo" value="MX-DIF">
+    <button type="submit">Buscar</button>
 </form>
 
-<h3>Tendencias Cacheadas Recientes:</h3>
-{% if cache %}
-  <ul>
-    {% for item in cache %}
-      <li>{{ item["tipo_agente"] }} - {{ item["tema"] }} → {{ item["resultado"] }} ({{ item["actualizado_en"] | datetimeformat }})</li>
-    {% endfor %}
-  </ul>
-{% else %}
-  <p>No hay tendencias cacheadas recientes.</p>
+{% if mensaje %}
+    <p style="color:red">{{ mensaje }}</p>
 {% endif %}
+
+{% if resultados %}
+    <h2>Resultados para búsqueda manual</h2>
+    <pre>{{ resultados | tojson(indent=2) }}</pre>
+{% endif %}
+
+{% if tendencias %}
+    <h2>📈 Tendencias recientes (últimas 6 horas)</h2>
+
+    {% for tipo_agente, temas in tendencias.items() %}
+        <h3>{{ tipo_agente | capitalize }}</h3>
+        <table border="1" cellpadding="6" cellspacing="0">
+            <thead>
+                <tr>
+                    <th>Tema</th>
+                    <th>Promedio</th>
+                    <th>Último valor</th>
+                    <th>Actualizado</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for t in temas %}
+                    <tr>
+                        <td>{{ t.tema }}</td>
+                        <td>{{ "%.2f"|format(t.promedio | float) }}</td>
+                        <td>{{ "%.2f"|format(t.ultimo_valor | float) }}</td>
+                        <td>{{ t.actualizado_en | datetimeformat }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endfor %}
+{% endif %}
+
+<p><a href="/">⬅️ Volver al inicio</a></p>
 {% endblock %}

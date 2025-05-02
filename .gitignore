@@ -16,6 +16,8 @@ __pycache__/
 
 # Base de datos local
 *.db
+*.db-wal
+*.db-shm
 
 # Logs
 *.log

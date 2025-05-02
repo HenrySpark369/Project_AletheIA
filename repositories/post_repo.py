@@ -21,12 +21,21 @@ def insertar_post(agente_id, contenido, created_at):
         conn.commit()
 
 def insertar_multiples_posts(lista_posts):
+    if not lista_posts:
+        return 0  # Evita operación si está vacío
+
     with obtener_conexion() as conn:
-        conn.executemany(
-            "INSERT INTO posts (agente_id, contenido, created_at) VALUES (?, ?, ?)",
-            lista_posts
-        )
-        conn.commit()
+        try:
+            c = conn.cursor()
+            c.executemany(
+                "INSERT INTO posts (agente_id, contenido, created_at) VALUES (?, ?, ?)",
+                lista_posts
+            )
+            conn.commit()
+            return c.rowcount  # Retorna cuántos se insertaron
+        except Exception as e:
+            conn.rollback()
+            raise e
 
 def eliminar_todos_los_posts():
     with obtener_conexion() as conn:

@@ -18,15 +18,20 @@ def obtener_todos_los_agentes():
         filas = conn.execute("SELECT * FROM agentes").fetchall()
         return [Agente(**fila).to_dict() for fila in filas]
 
-def insertar_agente(nombre, edad, intereses, tono, objetivo, tipo_agente):
+def insertar_multiples_agentes(lista_agentes):
     with obtener_conexion() as conn:
         c = conn.cursor()
-        c.execute("""
+        c.executemany("""
             INSERT INTO agentes (nombre, edad, intereses, tono, objetivo, tipo_agente)
             VALUES (?, ?, ?, ?, ?, ?)
-        """, (nombre, edad, intereses, tono, objetivo, tipo_agente))
+        """, lista_agentes)
         conn.commit()
-        return c.lastrowid
+
+        # Recuperar últimos N IDs insertados
+        c.execute("SELECT id FROM agentes ORDER BY id DESC LIMIT ?", (len(lista_agentes),))
+        rows = c.fetchall()
+        ids = [row[0] for row in rows][::-1]  # Revertimos para conservar el orden original
+        return ids
 
 def eliminar_todos_los_agentes():
     with obtener_conexion() as conn:

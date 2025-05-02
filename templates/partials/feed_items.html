@@ -1,7 +1,11 @@
 {% if posts %}
-    {% for post, nombre, created_at in posts %}
-    <div data-timestamp="{{ created_at }}">
-        <p><strong>{{ nombre }}</strong>: <small>{{ created_at | datetimeformat }}</small><br>{{ post }}</p>
+  {% for post in posts %}
+    <div class="post-card" data-timestamp="{{ post.created_at }}">
+      <p><strong class="autor">{{ post.nombre }}</strong></p>
+      <p>{{ post.contenido }}</p>
+      <small class="timestamp">{{ post.created_at | datetimeformat }}</small>
     </div>
-    {% endfor %}
+  {% endfor %}
+{% else %}
+  <p><i>No hay publicaciones recientes.</i></p>
 {% endif %}

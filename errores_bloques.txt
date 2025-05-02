@@ -1,0 +1,4 @@
+['deportes', 'opinión pública', 'tendencias de moda', 'fitness digital', 'moda viral']
+['educación', 'rumores de celebridades', 'frases motivacionales', 'tendencias', 'giveaways']
+['tecnología', 'reviews de gadgets', 'censura en redes', 'educación', 'salud mental']
+['cultura pop', 'videos de maquillaje', 'salud mental', 'noticias deportivas', 'tendencias de TikTok']

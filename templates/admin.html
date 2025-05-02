@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>🛠️ Panel de Control del Simulador</h2>
+
+<div style="margin-bottom: 20px;">
+  <a href="/admin/forzar_simulacion"><button>🚀 Forzar Simulación Ahora</button></a>
+  <a href="/admin/forzar_precache"><button>🔄 Forzar Precarga de Tendencias</button></a>
+</div>
+
+{% with messages = get_flashed_messages() %}
+  {% if messages %}
+    <ul style="color:green;">
+      {% for msg in messages %}
+        <li>{{ msg }}</li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+{% endwith %}
+
+<hr>
+<h3>Últimos 10 Posts Generados</h3>
+{% include "partials/feed_items.html" %}
+{% endblock %}

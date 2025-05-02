@@ -1,5 +1,10 @@
-{% for contenido, created_at in posts %}
-    <p><small>{{ created_at | datetimeformat }}</small><br>{{ contenido }}</p>
+{% if posts %}
+  {% for post in posts %}
+    <div class="post-card" data-timestamp="{{ post.created_at }}">
+      <p>{{ post.contenido }}</p>
+      <small>{{ post.created_at | datetimeformat }}</small>
+    </div>
+  {% endfor %}
 {% else %}
-    <p><i>Este agente aún no ha publicado nada.</i></p>
-{% endfor %}
+  <p><i>No hay publicaciones nuevas.</i></p>
+{% endif %}

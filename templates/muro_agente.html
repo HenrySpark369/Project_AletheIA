@@ -1,34 +1,39 @@
 {% extends "base.html" %}
 {% block content %}
-
-    <head>
-        <title>Muro de {{ agente[1] }}</title>
-        <script>
-            function actualizarMuro() {
-                fetch('/agente_fragment/{{ agente[0] }}')
-                    .then(response => response.text())
-                    .then(html => {
-                        document.getElementById('muro-container').innerHTML = html;
-                    });
-            }
-    
-            setInterval(actualizarMuro, 5000); // actualiza cada 15 segundos
-            window.onload = actualizarMuro;
-        </script>
-    </head>
-<body>
-<h2>Muro de {{ agente[1] }}</h2>
-<p><strong>Tipo:</strong> {{ agente[6] }} | <strong>Intereses:</strong> {{ agente[3] }}</p>
-
-<form method="post">
-    <button type="submit">📝 Generar nueva publicación</button>
-</form>
+<h2>🌐 Muro de {{ agente.nombre }}</h2>
+<p><strong>Edad:</strong> {{ agente.edad }} | <strong>Tipo:</strong> {{ agente.tipo_agente }}</p>
+<p><strong>Intereses:</strong> {{ agente.intereses }}</p>
+<p><strong>Objetivo:</strong> {{ agente.objetivo }}</p>
+<p><strong>Tono:</strong> {{ agente.tono }}</p>
 
 <hr>
-<div id="muro-container">
-    <p>Cargando publicaciones...</p>
+
+<h3>📝 Publicaciones recientes</h3>
+<!-- Alerta -->
+<div id="nuevo-post-alerta" style="display: none;">
+  <button onclick="mostrarNuevosPosts()">🔄 Ver <span id="contador-nuevos"></span> nuevos posts</button>
 </div>
 
-<a href="/agentes">← Volver a lista de agentes</a>
-</body>
+<!-- Muro -->
+<div id="muro-container">
+  {% if posts %}
+    {% for post in posts %}
+      <div class="post-card" data-timestamp="{{ post.created_at }}">
+        <p>{{ post.contenido }}</p>
+        <small>{{ post.created_at | datetimeformat }}</small>
+      </div>
+    {% endfor %}
+  {% else %}
+    <p><em>No hay publicaciones aún.</em></p>
+  {% endif %}
+</div>
+
+<p><a href="{{ url_for('agentes.lista_agentes') }}">⬅️ Volver a la lista de agentes</a></p>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/muro_agente.js') }}"></script>
+<script>
+  window.AGENTE_ID = "{{ agente.id | tojson }}";
+</script>
 {% endblock %}

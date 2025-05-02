@@ -1,21 +1,32 @@
 {% extends "base.html" %}
-
 {% block content %}
-<head><title>Nuevo agente</title></head>
-<body>
-<h2>Crear agente</h2>
-<form method="post">
-    Nombre: <input name="nombre"><br>
-    Edad: <input name="edad" type="number"><br>
-    Intereses: <input name="intereses"><br>
-    Tono: <input name="tono"><br>
-    Objetivo: <input name="objetivo"><br>
-    Tipo: <select name="tipo_agente">
-        <option>normal</option>
-        <option>troll</option>
-        <option>imitador</option>
-        <option>observador</option>
-    </select><br>
-    <button type="submit">Crear</button>
+<h2>👾 Crear nuevo agente</h2>
+
+<form method="post" action="{{ url_for('agentes.crear_agente') }}">
+  <label>Nombre:</label><br>
+  <input type="text" name="nombre" required><br><br>
+
+  <label>Edad:</label><br>
+  <input type="number" name="edad" min="1" max="120" required><br><br>
+
+  <label>Intereses (coma separados):</label><br>
+  <input type="text" name="intereses"><br><br>
+
+  <label>Tono:</label><br>
+  <input type="text" name="tono"><br><br>
+
+  <label>Objetivo:</label><br>
+  <input type="text" name="objetivo"><br><br>
+
+  <label>Tipo de agente:</label><br>
+  <select name="tipo_agente" required>
+    <option value="normal">Normal</option>
+    <option value="imitador">Imitador</option>
+    <option value="troll">Troll</option>
+    <option value="observador">Observador</option>
+  </select><br><br>
+
+  <button type="submit">✅ Crear</button>
+  <a href="{{ url_for('agentes.lista_agentes') }}">Cancelar</a>
 </form>
 {% endblock %}

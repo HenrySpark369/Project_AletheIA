@@ -9,19 +9,19 @@
     </tr>
     {% for agente in agentes %}
     <tr>
-        <td>{{ agente[0] }}</td>
-        <td>{{ agente[1] }}</td>
-        <td>{{ agente[2] }}</td>
-        <td>{{ agente[3] }}</td>
-        <td>{{ agente[4] }}</td>
-        <td>{{ agente[5] }}</td>
-        <td>{{ agente[6] }}</td>
-        <td><a href="/agente/{{ agente[0] }}">🌐 Ver muro</a></td>
+        <td>{{ agente.id }}</td>
+        <td>{{ agente.nombre }}</td>
+        <td>{{ agente.edad }}</td>
+        <td>{{ agente.intereses }}</td>
+        <td>{{ agente.tono }}</td>
+        <td>{{ agente.objetivo }}</td>
+        <td>{{ agente.tipo_agente }}</td>
+        <td><a href="/agente/{{ agente.id }}">🌐 Ver muro</a></td>
         <td>
-            <form action="/eliminar_agente/{{ agente[0] }}" method="post" style="display:inline;">
+            <form action="/eliminar_agente/{{ agente.id }}" method="post" style="display:inline;">
                 <button type="submit" onclick="return confirm('¿Eliminar este agente?')">🗑 Eliminar</button>
             </form>
-            <a href="/editar_agente/{{ agente[0] }}">✏️ Editar</a>
+            <a href="/editar_agente/{{ agente.id }}">✏️ Editar</a>
         </td>
     </tr>
     {% endfor %}

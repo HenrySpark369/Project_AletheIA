@@ -1,23 +1,31 @@
-<!doctype html>
-<html>
-<head><title>Editar agente</title></head>
-<body>
-<h2>Editar agente</h2>
-<form method="post">
-    Nombre: <input name="nombre" value="{{ agente[1] }}"><br>
-    Edad: <input name="edad" type="number" value="{{ agente[2] }}"><br>
-    Intereses: <input name="intereses" value="{{ agente[3] }}"><br>
-    Tono: <input name="tono" value="{{ agente[4] }}"><br>
-    Objetivo: <input name="objetivo" value="{{ agente[5] }}"><br>
-    Tipo:
-    <select name="tipo_agente">
-        <option {% if agente[6] == 'normal' %}selected{% endif %}>normal</option>
-        <option {% if agente[6] == 'troll' %}selected{% endif %}>troll</option>
-        <option {% if agente[6] == 'imitador' %}selected{% endif %}>imitador</option>
-        <option {% if agente[6] == 'observador' %}selected{% endif %}>observador</option>
-    </select><br>
-    <button type="submit">Guardar cambios</button>
+{% extends "base.html" %}
+{% block content %}
+<h2>✏️ Editar agente</h2>
+
+<form method="post" action="{{ url_for('agentes.editar_agente', agente_id=agente.id) }}">
+  <label>Nombre:</label><br>
+  <input type="text" name="nombre" value="{{ agente.nombre }}" required><br><br>
+
+  <label>Edad:</label><br>
+  <input type="number" name="edad" value="{{ agente.edad }}" min="1" max="120" required><br><br>
+
+  <label>Intereses:</label><br>
+  <input type="text" name="intereses" value="{{ agente.intereses }}"><br><br>
+
+  <label>Tono:</label><br>
+  <input type="text" name="tono" value="{{ agente.tono }}"><br><br>
+
+  <label>Objetivo:</label><br>
+  <input type="text" name="objetivo" value="{{ agente.objetivo }}"><br><br>
+
+  <label>Tipo de agente:</label><br>
+  <select name="tipo_agente" required>
+    {% for tipo in ["normal", "imitador", "troll", "observador"] %}
+      <option value="{{ tipo }}" {% if agente.tipo_agente == tipo %}selected{% endif %}>{{ tipo | capitalize }}</option>
+    {% endfor %}
+  </select><br><br>
+
+  <button type="submit">💾 Guardar cambios</button>
+  <a href="{{ url_for('agentes.lista_agentes') }}">Cancelar</a>
 </form>
-<a href="/agentes">← Volver</a>
-</body>
-</html>
+{% endblock %}

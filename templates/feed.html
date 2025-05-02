@@ -3,7 +3,7 @@
 <h2>Feed global</h2>
 <hr>
 <div style="margin-bottom: 20px;">
-  <form action="/cargar_agentes_demo" method="post" style="display:inline-block; margin-right:10px;">
+  <form action="/cargar_demo" method="post" style="display:inline-block; margin-right:10px;">
     <button type="submit">💾 Cargar agentes demo</button>
   </form>
   <form action="/limpiar_agentes" method="post" style="display:inline-block; margin-right:10px;" onsubmit="return confirm('¿Seguro que deseas limpiar todo?');">
@@ -36,7 +36,7 @@
       <script>
         function cargarAgentesDemo() {
             document.getElementById("status-carga").innerText = "Cargando agentes demo...";
-            fetch('/cargar_agentes_demo', { method: 'POST' })
+            fetch('/cargar_agentes', { method: 'POST' })
                 .then(response => {
                     if (!response.ok) throw new Error("Error al cargar agentes demo");
                     return response.json();
@@ -66,64 +66,24 @@
 
 <div style="text-align:center; margin-top:20px;">
   {% if pagina > 1 %}
-    <a href="{{ url_for('feed_global', page=1) }}">« Primera</a>
-    <a href="{{ url_for('feed_global', page=pagina-1) }}">← Anterior</a>
+    <a href="{{ url_for('feed.ver_feed', page=1) }}">« Primera</a>
+    <a href="{{ url_for('feed.ver_feed', page=pagina-1) }}">← Anterior</a>
   {% endif %}
 
   {% for p in range(inicio, fin + 1) %}
     {% if p == pagina %}
       <strong>[{{ p }}]</strong>
     {% else %}
-      <a href="{{ url_for('feed_global', page=p) }}">{{ p }}</a>
+      <a href="{{ url_for('feed.ver_feed', page=p) }}">{{ p }}</a>
     {% endif %}
   {% endfor %}
 
   {% if pagina < total_paginas %}
-    <a href="{{ url_for('feed_global', page=pagina+1) }}">Siguiente →</a>
-    <a href="{{ url_for('feed_global', page=total_paginas) }}">Última »</a>
+    <a href="{{ url_for('feed.ver_feed', page=pagina+1) }}">Siguiente →</a>
+    <a href="{{ url_for('feed.ver_feed', page=total_paginas) }}">Última »</a>
   {% endif %}
 </div>
 
 <!-- Script de actualización automática -->
-<script>
-  let ultimoTimestamp = null;
-  let nuevosHTML = "";
-
-  function actualizarFeed() {
-    fetch('/feed_fragment?desde=' + encodeURIComponent(ultimoTimestamp || ""))
-      .then(response => response.text())
-      .then(html => {
-        if (html.trim()) {
-          nuevosHTML = html;
-
-          const tempDiv = document.createElement('div');
-          tempDiv.innerHTML = html;
-          const nuevos = tempDiv.querySelectorAll('[data-timestamp]').length;
-
-          document.getElementById("contador-nuevos").innerText = `${nuevos}`;
-          document.getElementById("nuevo-post-alerta").style.display = "block";
-        }
-      });
-  }
-
-  function mostrarNuevosPosts() {
-    document.getElementById("feed-container").insertAdjacentHTML('afterbegin', nuevosHTML);
-
-    const primerPost = document.querySelector('[data-timestamp]');
-    if (primerPost) {
-      ultimoTimestamp = primerPost.getAttribute('data-timestamp');
-    }
-
-    document.getElementById("nuevo-post-alerta").style.display = "none";
-    nuevosHTML = "";
-  }
-
-  window.onload = () => {
-    const primerPost = document.querySelector('[data-timestamp]');
-    if (primerPost) {
-      ultimoTimestamp = primerPost.getAttribute('data-timestamp');
-    }
-    setInterval(actualizarFeed, 5000);
-  };
-</script>
+<script src="{{ url_for('static', filename='js/feed.js') }}"></script>
 {% endblock %}

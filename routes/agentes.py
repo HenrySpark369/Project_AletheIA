@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, request, redirect, jsonify
-from repositories.agente_repo import obtener_todos_los_agentes, insertar_agente, eliminar_todos_los_agentes
+from repositories.agente_repo import obtener_todos_los_agentes, insertar_multiples_agentes, eliminar_todos_los_agentes
 from repositories.post_repo import insertar_multiples_posts, eliminar_todos_los_posts, obtener_posts_por_agente
 from services.simulador_service import SimuladorDeAgentes
 import threading
@@ -96,40 +96,43 @@ def cargar_demo():
         ("ManagerX", 40, "coaching, negocios", "motivacional", "atraer clientes", "normal"),
         ("Daily Buggle", 50, "noticias, escándalos", "amarillista", "moldear opinión", "troll")
     ]
-    
-    agentes_guardados = []
 
     try:
         with db_lock:
-            for a in lista_agentes:
-                agente_id = insertar_agente(*a)
-                agentes_guardados.append({
-                    "id": agente_id,
-                    "nombre": a[0],
-                    "edad": a[1],
-                    "intereses": a[2],
-                    "tono": a[3],
-                    "objetivo": a[4],
-                    "tipo_agente": a[5]
-                })
+            agentes_ids = insertar_multiples_agentes(lista_agentes)
 
-            simulador = SimuladorDeAgentes(agentes_guardados)
-            publicaciones = simulador.simular_paso()
+        agentes_guardados = [
+            {
+                "id": agentes_ids[i],
+                "nombre": a[0],
+                "edad": a[1],
+                "intereses": a[2],
+                "tono": a[3],
+                "objetivo": a[4],
+                "tipo_agente": a[5]
+            }
+            for i, a in enumerate(lista_agentes)
+        ]
 
-            datos_posts_demo = [
-                (pub["agente_id"], pub["contenido"], pub["timestamp"])
-                for pub in publicaciones
-            ]
+        simulador = SimuladorDeAgentes(agentes_guardados)
+        publicaciones = simulador.simular_paso()
+
+        datos_posts_demo = [
+            (pub["agente_id"], pub["contenido"], pub["timestamp"])
+            for pub in publicaciones
+        ]
+
+        with db_lock:
             insertar_multiples_posts(datos_posts_demo)
 
-            for pub in publicaciones:
-                print(f"[SIM-DEMO] {pub['agente_id']} publicó '{pub['tema']}'")
+        print(f"[SIM-DEMO] Se generaron {len(publicaciones)} publicaciones para demo.")
 
         return jsonify({
             "status": "success",
-            "message": "Agentes ricos cargados correctamente.",
+            "message": "Agentes cargados correctamente.",
             "agentes_creados": len(agentes_guardados),
             "posts_generados": len(publicaciones)
         }), 201
+
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500

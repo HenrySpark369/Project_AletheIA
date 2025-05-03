@@ -8,7 +8,7 @@ from config import config
 from datetime import datetime
 from routes.simulador import simulador_bp
 from routes.admin import admin_bp
-
+from routes.clones import bp as clones_bp
 
 def create_app():
     entorno = os.getenv("FLASK_ENV", "development")
@@ -30,6 +30,7 @@ def create_app():
     app.register_blueprint(tendencias_bp)
     app.register_blueprint(simulador_bp)
     app.register_blueprint(admin_bp)
+    app.register_blueprint(clones_bp)
 
     # Ruta de salud
     @app.route("/health")

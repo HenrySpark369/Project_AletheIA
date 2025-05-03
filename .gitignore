@@ -50,3 +50,6 @@ build/
 
 # Archivos ZIP que no deban versionarse
 *.zip
+
+# Archivos de Texto
+*.txt

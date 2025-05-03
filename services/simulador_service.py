@@ -50,10 +50,37 @@ class SimuladorDeAgentes:
                     continue
 
                 try:
-                    if tipo in ["normal", "imitador"]:
+                    if tipo == "imitador":
                         tema, promedio, ultimo_valor = self.obtener_tema_cache(tipo)
 
-                        # Protección contra datos corruptos o nulos
+                        try:
+                            promedio = float(promedio) if promedio is not None else None
+                        except Exception:
+                            promedio = None
+                        try:
+                            ultimo_valor = float(ultimo_valor) if ultimo_valor is not None else None
+                        except Exception:
+                            ultimo_valor = None
+
+                        es_tendencia = (
+                            promedio is not None and 
+                            ultimo_valor is not None and 
+                            ultimo_valor > promedio
+                        )
+
+                        if not es_tendencia:
+                            tema, contexto = self.imitar_agente(agente)
+                        else:
+                            contexto = {
+                                "tema": tema,
+                                "promedio": promedio,
+                                "ultimo_valor": ultimo_valor,
+                                "es_tendencia": es_tendencia
+                            }
+
+                    elif tipo == "normal":
+                        tema, promedio, ultimo_valor = self.obtener_tema_cache(tipo)
+
                         try:
                             promedio = float(promedio) if promedio is not None else None
                         except Exception:
@@ -84,11 +111,29 @@ class SimuladorDeAgentes:
                     publicaciones.append({
                         "agente_id": agente_id,
                         "contenido": contenido,
-                        "tema": tema,
-                        "timestamp": self.hora_simulada.isoformat()
+                        "created_at": self.hora_simulada.isoformat(),
+                        "tema": tema
                     })
                 except Exception as e:
                     print(f"[SIMULADOR ERROR con agente {agente_id}]: {e}")
 
         self.hora_simulada += timedelta(seconds=random.randint(60, 150))
         return publicaciones
+
+    def imitar_agente(self, imitador):
+        candidatos = [a for a in self.agentes if a["tipo_agente"] == "normal"]
+        if not candidatos:
+            return None, {"tema": "tema_general"}
+
+        elegido = random.choice(candidatos)
+
+        # Suponemos que puedes acceder a sus publicaciones históricas
+        from repositories.post_repo import obtener_ultimos_posts_de_agente
+        posts = obtener_ultimos_posts_de_agente(elegido["id"], limite=1)
+
+        if posts:
+            tema = posts[0]["tema"]
+            contexto = {"tema": tema}
+            return tema, contexto
+        else:
+            return None, {"tema": "tema_general"}

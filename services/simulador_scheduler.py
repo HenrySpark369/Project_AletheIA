@@ -17,7 +17,7 @@ def ejecutar_simulacion_periodica():
         agentes = obtener_todos_los_agentes()
         simulador = SimuladorDeAgentes(agentes)
         publicaciones = simulador.simular_paso()
-        datos = [(p["agente_id"], p["contenido"], p["timestamp"]) for p in publicaciones]
+        datos = [(p["agente_id"], p["contenido"], p["created_at"], p["tema"]) for p in publicaciones]
 
         with db_lock:
             insertar_multiples_posts(datos)

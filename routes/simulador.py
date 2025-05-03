@@ -15,7 +15,7 @@ def actividad_automatica():
         publicaciones = simulador.simular_paso()
 
         datos_posts = [
-            (post["agente_id"], post["contenido"], post["timestamp"])
+            (post["agente_id"], post["contenido"], post["created_at"], post["tema"] )
             for post in publicaciones
         ]
 

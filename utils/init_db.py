@@ -27,6 +27,7 @@ def init_db():
                 agente_id INTEGER,
                 contenido TEXT,
                 created_at TEXT,
+                tema TEXT,
                 FOREIGN KEY (agente_id) REFERENCES agentes(id)
             )
         """)

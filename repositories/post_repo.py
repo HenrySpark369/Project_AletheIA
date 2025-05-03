@@ -12,27 +12,27 @@ def obtener_conexion():
     conn.row_factory = sqlite3.Row
     return conn
 
-def insertar_post(agente_id, contenido, created_at):
+def insertar_post(agente_id, contenido, created_at, tema=None):
     with obtener_conexion() as conn:
         conn.execute(
-            "INSERT INTO posts (agente_id, contenido, created_at) VALUES (?, ?, ?)",
-            (agente_id, contenido, created_at)
+            "INSERT INTO posts (agente_id, contenido, created_at, tema) VALUES (?, ?, ?, ?)",
+            (agente_id, contenido, created_at, tema)
         )
         conn.commit()
 
 def insertar_multiples_posts(lista_posts):
     if not lista_posts:
-        return 0  # Evita operación si está vacío
+        return 0
 
     with obtener_conexion() as conn:
         try:
             c = conn.cursor()
             c.executemany(
-                "INSERT INTO posts (agente_id, contenido, created_at) VALUES (?, ?, ?)",
+                "INSERT INTO posts (agente_id, contenido, created_at, tema) VALUES (?, ?, ?, ?)",
                 lista_posts
             )
             conn.commit()
-            return c.rowcount  # Retorna cuántos se insertaron
+            return c.rowcount
         except Exception as e:
             conn.rollback()
             raise e
@@ -78,3 +78,14 @@ def obtener_feed_con_paginacion(limit=10, offset=0):
 def contar_posts():
     with obtener_conexion() as conn:
         return conn.execute("SELECT COUNT(*) FROM posts").fetchone()[0]
+
+def obtener_ultimos_posts_de_agente(agente_id, limite=1):
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT tema, contenido FROM posts WHERE agente_id = ? ORDER BY created_at DESC LIMIT ?",
+        (agente_id, limite)
+    )
+    rows = cursor.fetchall()
+    conn.close()
+    return [{"tema": r[0], "contenido": r[1]} for r in rows]

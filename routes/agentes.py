@@ -118,7 +118,7 @@ def cargar_demo():
         publicaciones = simulador.simular_paso()
 
         datos_posts_demo = [
-            (pub["agente_id"], pub["contenido"], pub["timestamp"])
+            (pub["agente_id"], pub["contenido"], pub["created_at"], pub["tema"])
             for pub in publicaciones
         ]
 

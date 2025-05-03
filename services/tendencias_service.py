@@ -79,30 +79,30 @@ def obtener_tema_en_tendencia_desde_cache(tipo_agente, geo="MX-DIF", ttl_horas=1
                 ahora = datetime.now()
                 limite = ahora - timedelta(hours=ttl_horas)
 
-                # Consultar varios temas recientes en caché
+                # Consultar temas en caché, ordenados por promedio (más relevantes primero)
                 c.execute('''
-                    SELECT resultado FROM tendencias_cache
+                    SELECT resultado, promedio, ultimo_valor FROM tendencias_cache
                     WHERE tipo_agente = ? AND actualizado_en > ?
-                    ORDER BY actualizado_en DESC LIMIT ?
+                    ORDER BY promedio DESC, actualizado_en DESC
+                    LIMIT ?
                 ''', (tipo_agente, limite.isoformat(), max_cache_temas))
                 rows = c.fetchall()
 
                 if rows:
-                    temas_disponibles = [row[0] for row in rows]
-                    tema_elegido = random.choice(temas_disponibles)
-                    print(f"[CACHE] Usando tema en caché para {tipo_agente}: {tema_elegido}")
-                    return tema_elegido
+                    tema_elegido, promedio, ultimo_valor = rows[0]
+                    promedio = float(promedio) if promedio is not None else None
+                    ultimo_valor = float(ultimo_valor) if ultimo_valor is not None else None
+                    print(f"[CACHE] Usando TOP tema en caché para {tipo_agente}: {tema_elegido} (Prom={promedio}, Último={ultimo_valor})")
+                    return tema_elegido, promedio, ultimo_valor
 
-                # No hay temas en caché, buscar uno nuevo
+                # Si no hay temas recientes, obtener nuevo
                 top_tema = tendencias(tipo_agente, geo)
                 if not top_tema:
                     top_tema = obtener_tema(tipo_agente)
 
-                # Guardar en caché el nuevo tema
                 guardar_tema_en_cache(tipo_agente, top_tema)
-
                 print(f"[CACHE] Tema guardado para {tipo_agente}: {top_tema}")
-                return top_tema
+                return top_tema, None, None
 
         except sqlite3.OperationalError as e:
             if "locked" in str(e):
@@ -173,6 +173,8 @@ def consultar_bloque(pytrends, bloque, geo, max_retries=3):
 def guardar_tema_en_cache(tipo_agente, tema, promedio=None, ultimo_valor=None):
     try:
         ahora = datetime.now().isoformat()
+        promedio = float(promedio) if promedio is not None else None
+        ultimo_valor = float(ultimo_valor) if ultimo_valor is not None else None
         with sqlite3.connect("database.db", timeout=60) as conn:
             c = conn.cursor()
             c.execute("""
@@ -220,8 +222,8 @@ def tendencias(tipo_agente=None, geo="MX", max_bloques=5):
 
         for tema in bloque:
             if tema in interes_tiempo and not interes_tiempo[tema].empty:
-                promedio = interes_tiempo[tema].mean()
-                ultimo_valor = interes_tiempo[tema].iloc[-1]
+                promedio = float(interes_tiempo[tema].mean())
+                ultimo_valor = float(interes_tiempo[tema].iloc[-1])
                 ranking[tema] = {
                     "promedio": promedio,
                     "ultimo_valor": ultimo_valor

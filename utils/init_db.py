@@ -1,4 +1,3 @@
-# utils/init_db.py
 import sqlite3
 
 def init_db():
@@ -46,10 +45,38 @@ def init_db():
             )
         """)
 
+        # Tabla de resultados de clones detectados
+        c.execute("""
+            CREATE TABLE IF NOT EXISTS clones (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                nombre TEXT,
+                username TEXT,
+                correo TEXT,
+                ruta_imagen TEXT,
+                resultado TEXT,
+                url TEXT,
+                score_similitud REAL,
+                fuente TEXT,
+                fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+
         # Índices útiles
         c.execute("CREATE INDEX IF NOT EXISTS idx_posts_agente_id ON posts(agente_id);")
         c.execute("CREATE INDEX IF NOT EXISTS idx_posts_created_at ON posts(created_at);")
         c.execute("CREATE INDEX IF NOT EXISTS idx_tendencias_tipo_agente ON tendencias_cache(tipo_agente);")
+
+        # Búsqueda por campos clave - para buscar clones por username, correo, o nombre
+        c.execute("CREATE INDEX IF NOT EXISTS idx_clones_username ON clones(username);")
+        c.execute("CREATE INDEX IF NOT EXISTS idx_clones_correo ON clones(correo);")
+        c.execute("CREATE INDEX IF NOT EXISTS idx_clones_nombre ON clones(nombre);")
+        # Ordenamiento por fecha - visualización de resultados recientes, ordenados por fecha
+        c.execute("CREATE INDEX IF NOT EXISTS idx_clones_fecha ON clones(fecha);")
+        # Filtrado por fuente o score_similitud - análisis por fuente (Yandex, DuckDuckGo, Sherlock, etc.), o para rankear por score
+        c.execute("CREATE INDEX IF NOT EXISTS idx_clones_fuente ON clones(fuente);")
+        c.execute("CREATE INDEX IF NOT EXISTS idx_clones_score_similitud ON clones(score_similitud);")
+        # Búsqueda compuesta - optimizar una consulta que use username + fuente
+        c.execute("CREATE INDEX IF NOT EXISTS idx_clones_username_fuente ON clones(username, fuente);")
 
         # Modo WAL para concurrencia
         c.execute("PRAGMA journal_mode=WAL;")

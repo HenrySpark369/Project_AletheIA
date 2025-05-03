@@ -1,0 +1,19 @@
+<h2>Historial de búsquedas</h2>
+<table border="1">
+  <tr>
+    <th>Fecha</th><th>Nombre</th><th>Username</th><th>Correo</th><th>Similitud</th><th>Fuente</th>
+  </tr>
+  {% for r in resultados %}
+    <tr>
+      <tr>
+        <td>{{ r[9] }}</td>  <!-- fecha -->
+        <td>{{ r[1] }}</td>  <!-- nombre -->
+        <td>{{ r[2] }}</td>  <!-- username -->
+        <td>{{ r[3] }}</td>  <!-- correo -->
+        <td>{{ r[7] }}</td>  <!-- score_similitud -->
+        <td>{{ r[8] }}</td>  <!-- fuente -->
+        <td><a href="{{ r[6] }}" target="_blank">{{ r[6] }}</a></td> <!-- url -->
+      </tr>
+    </tr>
+  {% endfor %}
+</table>

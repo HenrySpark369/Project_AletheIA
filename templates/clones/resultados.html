@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block content %}
+{% if clones %}
+<ul>
+  {% for resultado, score in clones %}
+    <li>
+      <strong>Fuente:</strong> {{ resultado.fuente }}<br>
+      <strong>URL:</strong> <a href="{{ resultado.url }}" target="_blank">{{ resultado.url }}</a><br>
+      <strong>Similitud:</strong> {{ score | round(2) }}
+    </li>
+  {% endfor %}
+</ul>
+{% else %}
+<p>No se encontraron clones.</p>
+{% endif %}
+{% endblock %}

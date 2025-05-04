@@ -52,6 +52,50 @@ set OPENAI_API_KEY=tu_clave_aqui     # En Windows
 
 ---
 
+## 🔐 Seguridad y Configuración de Flask
+
+Para que ciertas funcionalidades como `flash()` funcionen correctamente (por ejemplo, en el módulo de clones OSINT o formularios), **es obligatorio definir una `SECRET_KEY`**.
+
+### ¿Qué es?
+
+`SECRET_KEY` protege sesiones y operaciones internas como `flash()`, autenticación, tokens CSRF, etc.
+
+### 🔧 Formas de generarla en Python
+
+#### Para desarrollo:
+```python
+import os
+SECRET_KEY = os.urandom(24)
+```
+
+#### Para producción:
+```python
+import secrets
+SECRET_KEY = secrets.token_hex(32)
+```
+
+Puedes generar una y guardarla como variable de entorno:
+
+#### En Linux/macOS:
+```bash
+export FLASK_SECRET_KEY=$(python -c "import secrets; print(secrets.token_hex(32))")
+```
+
+#### En Windows (CMD):
+```cmd
+set FLASK_SECRET_KEY=tu_clave_segura_aqui
+```
+
+### 🧠 Configuración sugerida en `config.py`:
+```python
+import os
+SECRET_KEY = os.environ.get("FLASK_SECRET_KEY", os.urandom(24))
+```
+
+> ⚠️ Usa una clave aleatoria y única para cada entorno. Nunca compartas tu `SECRET_KEY` pública si vas a publicar el código.
+
+---
+
 ## 🚀 Ejecución
 
 Una vez configurado el entorno y la base de datos:

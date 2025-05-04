@@ -30,7 +30,7 @@ def precachear_tendencias():
     tipos = ["normal", "imitador", "troll", "observador"]
     for tipo in tipos:
         try:
-            tema = obtener_tema_en_tendencia_desde_cache(tipo_agente=tipo, ttl_horas=6)
+            tema = obtener_tema_en_tendencia_desde_cache(tipo_agente=tipo, ttl_horas=1)
             print(f"[PRECACHE] Tema precargado para {tipo}: {tema}")
         except Exception as e:
             print(f"[PRECACHE ERROR] {tipo}: {e}")
@@ -45,4 +45,4 @@ def iniciar_scheduler():
     scheduler.add_job(precachear_tendencias, 'interval', hours=6)
     scheduler.start()
     print("[SCHEDULER] Simulación automática activada cada 60 segundos.")
-    print("[SCHEDULER] Precarga de tendencias activada cada 6 horas.")
+    print(f"[SCHEDULER] Precarga de tendencias activada cada 1 hora.")

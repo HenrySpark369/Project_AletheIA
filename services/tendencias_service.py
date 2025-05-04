@@ -1,4 +1,4 @@
-# temas.py
+# tendencias_service.py
 import random
 
 temas_comunes = [
@@ -113,38 +113,59 @@ def obtener_tema_en_tendencia_desde_cache(tipo_agente, geo="MX-DIF", ttl_horas=1
                 raise e
     raise Exception("Base de datos bloqueada tras varios intentos.")
 
-# Serpapi y google trends
+from pytrends.request import TrendReq
+import sqlite3
+from datetime import datetime, timedelta
+import time
 
+def obtener_tendencias(tema, geo="MX-DIF", usar_cache=True, ttl_horas=1):
+    if usar_cache:
+        ahora = datetime.now()
+        limite = ahora - timedelta(hours=ttl_horas)
+        with sqlite3.connect("database.db", timeout=60) as conn:
+            c = conn.cursor()
+            c.execute('''
+                SELECT promedio, ultimo_valor FROM tendencias_cache
+                WHERE tema = ? AND actualizado_en > ?
+                ORDER BY actualizado_en DESC LIMIT 1
+            ''', (tema, limite.isoformat()))
+            row = c.fetchone()
+            if row:
+                promedio, ultimo_valor = row
+                print(f"[CACHE] Tema encontrado en cache: {tema} (Prom={promedio}, Último={ultimo_valor})")
+                return tema, float(promedio), float(ultimo_valor)
 
-from serpapi import GoogleSearch
-import os
-
-API_KEY = os.getenv("SERPAPI_KEY")  # Usa una variable de entorno por seguridad
-
-def obtener_tendencias(tema, geo="MX-DIF"):
-    if not API_KEY:
-        print("[ERROR] SERPAPI_KEY no configurada.")
-        return {}  # Retorna vacío si no hay clave
+    # Si no está en caché o no se desea usar
+    pytrends = TrendReq(
+        hl='es-MX',
+        tz=360,
+        timeout=(5, 10),
+        retries=3,
+        backoff_factor=0.3,
+        requests_args={'headers': {'User-Agent': 'Mozilla/5.0'}}
+    )
 
     try:
-        params = {
-            "engine": "google_trends",
-            "q": tema,
-            "geo": geo,
-            "api_key": API_KEY
-        }
-        search = GoogleSearch(params)
-        results = search.get_dict()
+        pytrends.build_payload([tema], cat=0, timeframe='now 7-d', geo=geo, gprop='')
+        df = pytrends.interest_over_time()
 
-        return {
-            "interes_tiempo": results.get("interest_over_time", {}),
-            "por_region": results.get("interest_by_region", {}),
-            "temas_relacionados": results.get("related_topics", {}),
-            "busquedas_relacionadas": results.get("related_queries", {})
-        }
+        if not df.empty and tema in df.columns:
+            promedio = float(df[tema].mean())
+            ultimo_valor = float(df[tema].iloc[-1])
+
+            # Guardar en caché
+            guardar_tema_en_cache("general", tema, promedio, ultimo_valor)
+
+            print(f"[PYTRENDS] Tema consultado: {tema} (Prom={promedio}, Último={ultimo_valor})")
+            return tema, promedio, ultimo_valor
+
+        else:
+            print(f"[WARN] Sin datos relevantes para: {tema}")
+            return None
+
     except Exception as e:
-        print(f"[ERROR en obtener_tendencias]: {e}")
-        return {}  # ← fallback si SerpAPI truena o no hay conexión
+        print(f"[ERROR] en obtener_tendencias({tema}): {e}")
+        return None
 
 import requests
 import json
@@ -171,10 +192,15 @@ def consultar_bloque(pytrends, bloque, geo, max_retries=3):
     return None
 
 def guardar_tema_en_cache(tipo_agente, tema, promedio=None, ultimo_valor=None):
+    if promedio is None or ultimo_valor is None:
+        print(f"[CACHE] No se guarda tema por datos incompletos: {tema} (Prom={promedio}, Último={ultimo_valor})")
+        return  # Salir sin guardar
+
     try:
         ahora = datetime.now().isoformat()
-        promedio = float(promedio) if promedio is not None else None
-        ultimo_valor = float(ultimo_valor) if ultimo_valor is not None else None
+        promedio = float(promedio)
+        ultimo_valor = float(ultimo_valor)
+
         with sqlite3.connect("database.db", timeout=60) as conn:
             c = conn.cursor()
             c.execute("""
@@ -184,13 +210,13 @@ def guardar_tema_en_cache(tipo_agente, tema, promedio=None, ultimo_valor=None):
             """, (
                 tipo_agente,
                 tema,
-                tema,  # puedes reemplazar esto con JSON si `resultado` es más complejo
+                tema,  # Si se necesita, se puede hacer JSON aquí
                 ahora,
                 promedio,
                 ultimo_valor
             ))
             conn.commit()
-            print(f"[CACHE] Tema guardado en cache: {tema} (Prom={promedio}, Último={ultimo_valor})")
+            print(f"[CACHE] Tema guardado: {tema} (Prom={promedio}, Último={ultimo_valor})")
     except sqlite3.Error as e:
         print(f"[ERROR] No se pudo guardar el tema en cache: {e}")
 

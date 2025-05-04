@@ -18,8 +18,17 @@ def ver_tendencias():
             mensaje = "Por favor ingresa un tema para buscar."
         else:
             try:
-                resultados = tendencias(tema, geo)
-                insertar_o_actualizar_tendencia("general", tema, resultados)
+                resultado = obtener_tendencias(tema, geo)
+                if resultado:
+                    tema, promedio, ultimo_valor = resultado
+                    insertar_o_actualizar_tendencia("general", tema, resultados)
+                    resultados = {
+                        "tema": tema,
+                        "promedio": promedio,
+                        "ultimo_valor": ultimo_valor
+                    }
+                else:
+                    mensaje = "No se encontraron datos relevantes para ese tema."
             except Exception as e:
                 print("[ERROR en tendencias POST]:", e)
                 mensaje = "Error consultando tendencias externas."

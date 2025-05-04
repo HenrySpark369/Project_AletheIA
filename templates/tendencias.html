@@ -15,8 +15,23 @@
 {% endif %}
 
 {% if resultados %}
-    <h2>Resultados para búsqueda manual</h2>
-    <pre>{{ resultados | tojson(indent=2) }}</pre>
+    <h2>🔎 Resultado de búsqueda manual</h2>
+    <table border="1" cellpadding="6" cellspacing="0">
+        <thead>
+            <tr>
+                <th>Tema</th>
+                <th>Promedio</th>
+                <th>Último valor</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>{{ resultados.tema }}</td>
+                <td>{{ "%.2f"|format(resultados.promedio | float) }}</td>
+                <td>{{ "%.2f"|format(resultados.ultimo_valor | float) }}</td>
+            </tr>
+        </tbody>
+    </table>
 {% endif %}
 
 {% if tendencias %}

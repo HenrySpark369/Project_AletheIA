@@ -28,7 +28,7 @@ def guardar_resultado(nombre, username, correo, ruta_imagen, resultado, score, f
     c.execute('''
         INSERT INTO clones (nombre, username, correo, ruta_imagen, resultado, url, score_similitud, fuente)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    ''', (nombre, username, correo, ruta_imagen, str(resultado), url, score, fuente))
+    ''', (nombre, username, correo, ruta_imagen, str(resultado), url, f"{score*100:.2f}", fuente))
     conn.commit()
     conn.close()
 

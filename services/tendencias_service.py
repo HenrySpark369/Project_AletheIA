@@ -238,7 +238,7 @@ def tendencias(tipo_agente=None, geo="MX", max_bloques=5):
         ranking_ordenado = sorted(ranking.items(), key=lambda x: x[1]["promedio"], reverse=True)
         top_tema, datos = ranking_ordenado[0]
         print(f"[TOP] Tema más relevante: {top_tema} (Promedio={datos['promedio']:.2f}, Último valor={datos['ultimo_valor']})")
-        return top_tema
+        return top_tema, datos['promedio'], datos['ultimo_valor']
     else:
         print("[FALLBACK] No se obtuvieron datos relevantes. Usando tema aleatorio.")
         return obtener_tema(tipo_agente)

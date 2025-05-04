@@ -25,7 +25,7 @@ def ver_tendencias():
                 mensaje = "Error consultando tendencias externas."
 
     if request.method == "GET" or not resultados:
-        filas = obtener_tendencias_recientes(ttl_horas=6)
+        filas = obtener_tendencias_recientes(ttl_horas=1)
         for row in filas:
             tipo = row["tipo_agente"]
             tendencias_por_tipo.setdefault(tipo, []).append(row)

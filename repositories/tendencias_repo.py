@@ -10,7 +10,7 @@ def insertar_o_actualizar_tendencia(tipo_agente, tema, resultado):
         """, (tipo_agente, tema, str(resultado)))
         conn.commit()
 
-def obtener_tendencias_recientes(ttl_horas=6):
+def obtener_tendencias_recientes(ttl_horas=1):
     with sqlite3.connect("database.db", timeout=60) as conn:
         conn.row_factory = sqlite3.Row
         c = conn.cursor()

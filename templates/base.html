@@ -1,30 +1,112 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8">
-  <title>{% block title %}Mi App{% endblock %}</title>
+  <title>{% block title %}AegisNet{% endblock %}</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
+
 <body>
+
   <header>
-    <h1>AegisNet</h1>
-    <nav>
-      <a href="/">🏠 Inicio</a> |
-      <a href="/agentes">🤖 Agentes</a> |
-      <a href="/tendencias">📈 Tendencias</a> |
-      <a href="/admin">⚙️ Panel de Control</a> |
-      <a href="/clones">🧬 Buscar Clones</a> |
-      <a href="/clones/historial">🗂️ Historial de Clones</a>
+    <nav class="navbar navbar-expand-md navbar fixed-top" style="background-color:#efefef !important;">
+      <div class="container-fluid">
+        <a class="navbar-brand" href="#">AegisNet</a>
+
+        <ul class="nav col-12 col-md-auto mb-2 justify-content-center mb-md-0">
+          <li><a href="/" class="nav-link px-2 link-secondary">🏠 Inicio</a></li>
+          <li><a href="/agentes" class="nav-link px-2 link-dark">🤖 Agentes</a></li>
+          <li><a href="/tendencias" class="nav-link px-2 link-dark">📈 Tendencias</a></li>
+          <li><a href="/admin" class="nav-link px-2 link-dark">⚙️ Panel de Control</a></li>
+          <li><a href="/clones" class="nav-link px-2 link-dark">🧬 Buscar Clones</a></li>
+          <li><a href="/clones/historial" class="nav-link px-2 link-dark">🗂️ Historial de Clones</a></li>
+        </ul>
+
+        <div class="col-md-3 text-end">
+          <button type="button" class="btn btn-outline-primary me-2">Login</button>
+          <button type="button" class="btn btn-primary">Sign-up</button>
+        </div>
+      </div>
     </nav>
   </header>
 
-  <main>
+
+
+
+
+  <main class="container" style="padding-top: 5%;">
     {% block content %}{% endblock %}
   </main>
 
-  <footer>
-    <p>&copy; HenrySpark369 @2025</p>
-  </footer>
+
+  <div class="container">
+    <footer class="py-5">
+      <div class="row">
+        <div class="col-6 col-md-2 mb-3">
+          <h5>SaaS</h5>
+          <ul class="nav flex-column">
+            <li class="nav-item mb-2"><a href="#" class="nav-link p-0 text-body-secondary">Home</a></li>
+            <li class="nav-item mb-2"><a href="#" class="nav-link p-0 text-body-secondary">Features</a></li>
+            <li class="nav-item mb-2"><a href="#" class="nav-link p-0 text-body-secondary">Pricing</a></li>
+            <li class="nav-item mb-2"><a href="#" class="nav-link p-0 text-body-secondary">FAQs</a></li>
+            <li class="nav-item mb-2"><a href="#" class="nav-link p-0 text-body-secondary">About</a></li>
+          </ul>
+        </div>
+
+        <div class="col-6 col-md-2 mb-3">
+          <h5>Nosotros</h5>
+          <ul class="nav flex-column">
+            <li class="nav-item mb-2"><a href="#" class="nav-link p-0 text-body-secondary">Home</a></li>
+            <li class="nav-item mb-2"><a href="#" class="nav-link p-0 text-body-secondary">Features</a></li>
+            <li class="nav-item mb-2"><a href="#" class="nav-link p-0 text-body-secondary">Pricing</a></li>
+            <li class="nav-item mb-2"><a href="#" class="nav-link p-0 text-body-secondary">FAQs</a></li>
+            <li class="nav-item mb-2"><a href="#" class="nav-link p-0 text-body-secondary">About</a></li>
+          </ul>
+        </div>
+
+        <div class="col-6 col-md-2 mb-3">
+          <h5>About</h5>
+          <ul class="nav flex-column">
+            <li class="nav-item mb-2"><a href="#" class="nav-link p-0 text-body-secondary">Home</a></li>
+            <li class="nav-item mb-2"><a href="#" class="nav-link p-0 text-body-secondary">Features</a></li>
+            <li class="nav-item mb-2"><a href="#" class="nav-link p-0 text-body-secondary">Pricing</a></li>
+            <li class="nav-item mb-2"><a href="#" class="nav-link p-0 text-body-secondary">FAQs</a></li>
+            <li class="nav-item mb-2"><a href="#" class="nav-link p-0 text-body-secondary">About</a></li>
+          </ul>
+        </div>
+
+        <div class="col-md-5 offset-md-1 mb-3">
+          <form>
+            <h5>Adquiere AegisNet</h5>
+            <p>Nos pondremos en contacto contigo</p>
+            <div class="d-flex flex-column flex-sm-row w-100 gap-2">
+              <label for="newsletter1" class="visually-hidden">Email</label>
+              <input id="newsletter1" type="email" class="form-control" placeholder="Email address">
+              <button class="btn btn-primary" type="button">¡Lo quiero!</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <div class="d-flex flex-column flex-sm-row justify-content-between py-4 my-4 border-top">
+        <p>© 2025 HenrySpark / Xared / Adance8000</p>
+        <ul class="list-unstyled d-flex">
+          <li class="ms-3"><a class="link-body-emphasis" href="#" aria-label="Instagram"><svg class="bi" width="24"
+                height="24">
+                <use xlink:href="#instagram"></use>
+              </svg></a></li>
+          <li class="ms-3"><a class="link-body-emphasis" href="#" aria-label="Facebook"><svg class="bi" width="24"
+                height="24" aria-hidden="true">
+                <use xlink:href="#facebook"></use>
+              </svg></a></li>
+        </ul>
+      </div>
+    </footer>
+  </div>
+
+
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </body>
+
 </html>

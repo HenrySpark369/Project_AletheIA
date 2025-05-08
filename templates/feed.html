@@ -1,89 +1,111 @@
 {% extends "base.html" %}
 {% block content %}
-<h2>Feed global</h2>
-<hr>
-<div style="margin-bottom: 20px;">
-  <form action="/cargar_demo" method="post" style="display:inline-block; margin-right:10px;">
-    <button type="submit">💾 Cargar agentes demo</button>
-  </form>
-  <form action="/limpiar_agentes" method="post" style="display:inline-block; margin-right:10px;" onsubmit="return confirm('¿Seguro que deseas limpiar todo?');">
-    <button type="submit">🧹 Limpiar todos los agentes</button>
-  </form>
-  <form action="/crear_agente" method="get" style="display:inline-block;">
-    <button type="submit">👾 Crear Agente</button>
-  </form>
-</div>
+
+<main class="container">
+  <div class="bg-body-tertiary p-5 rounded">
+    <h3>Feed Global</h3>
+    <p>
+    <form action="/cargar_agentes_demo" method="post" style="display:inline-block; margin-right:10px;">
+      <button type="submit" class="btn btn-primary">💾 Cargar agentes demo</button>
+    </form>
+    <form action="/limpiar_agentes" method="post" style="display:inline-block; margin-right:10px;"
+      onsubmit="return confirm('¿Seguro que deseas limpiar todo?');">
+      <button type="submit" class="btn btn-warning">🧹 Limpiar todos los agentes</button>
+    </form>
+    <form action="/crear_agente" method="get" style="display:inline-block;">
+      <button type="submit" class="btn btn-outline-success">👾 Crear Agente</button>
+    </form>
+    </p>
+  </div>
+</main>
 
 <hr>
 
 <!-- Alerta de nuevos posts -->
 <div id="nuevo-post-alerta" style="display: none; text-align: center; margin: 10px 0;">
-  <button onclick="mostrarNuevosPosts()">🔄 <span id="contador-nuevos"></span> nuevos posts disponibles. Clic para ver.</button>
+  <button onclick="mostrarNuevosPosts()" class="btn btn-outline-success">🔄 <span id="contador-nuevos"></span> nuevos
+    posts
+    disponibles. Clic para
+    ver.</button>
 </div>
 
 <!-- Contenedor del feed -->
 <div id="feed-container">
-    {% if not posts %}
-      <p><em>No hay publicaciones aún.</em></p>
-      <p>
-        Puedes crear un agente desde 
-        <a href="/crear_agente">aquí</a> o 
-        💾 Cargar agentes demo ↖️
-      </p>
-  
-      <p id="status-carga" style="color:gray;"></p>
-  
-      <script>
-        function cargarAgentesDemo() {
-            document.getElementById("status-carga").innerText = "Cargando agentes demo...";
-            fetch('/cargar_agentes', { method: 'POST' })
-                .then(response => {
-                    if (!response.ok) throw new Error("Error al cargar agentes demo");
-                    return response.json();
-                })
-                .then(data => {
-                    if (data.status === "ok") {
-                        document.getElementById("status-carga").innerText = "¡Agentes cargados!";
-                        setTimeout(actualizarFeed, 1000);
-                    }
-                })
-                .catch(error => {
-                    console.error("Error al cargar agentes demo:", error);
-                    document.getElementById("status-carga").innerText = "Error al cargar.";
-                });
-        }
-      </script>
-  
-    {% else %}
-      {% include "partials/feed_items.html" %}
-    {% endif %}
-  </div>
+  {% if not posts %}
+  <p><em>No hay publicaciones aún.</em></p>
+  <p>
+    Puedes crear un agente desde
+    <a href="/crear_agente">aquí</a> o
+    💾 Cargar agentes demo ↖️
+  </p>
 
-<!-- Navegación de paginación -->
-<hr>
-{% set inicio = 1 if pagina - 10 < 1 else pagina - 10 %}
-{% set fin = total_paginas if pagina + 6 > total_paginas else pagina + 6 %}
+  <p id="status-carga" style="color:gray;"></p>
 
-<div style="text-align:center; margin-top:20px;">
-  {% if pagina > 1 %}
-    <a href="{{ url_for('feed.ver_feed', page=1) }}">« Primera</a>
-    <a href="{{ url_for('feed.ver_feed', page=pagina-1) }}">← Anterior</a>
-  {% endif %}
+  <script>
+    function cargarAgentesDemo() {
+      document.getElementById("status-carga").innerText = "Cargando agentes demo...";
+      fetch('/cargar_agentes', { method: 'POST' })
+        .then(response => {
+          if (!response.ok) throw new Error("Error al cargar agentes demo");
+          return response.json();
+        })
+        .then(data => {
+          if (data.status === "ok") {
+            document.getElementById("status-carga").innerText = "¡Agentes cargados!";
+            setTimeout(actualizarFeed, 1000);
+          }
+        })
+        .catch(error => {
+          console.error("Error al cargar agentes demo:", error);
+          document.getElementById("status-carga").innerText = "Error al cargar.";
+        });
+    }
+  </script>
 
-  {% for p in range(inicio, fin + 1) %}
-    {% if p == pagina %}
-      <strong>[{{ p }}]</strong>
-    {% else %}
-      <a href="{{ url_for('feed.ver_feed', page=p) }}">{{ p }}</a>
-    {% endif %}
-  {% endfor %}
-
-  {% if pagina < total_paginas %}
-    <a href="{{ url_for('feed.ver_feed', page=pagina+1) }}">Siguiente →</a>
-    <a href="{{ url_for('feed.ver_feed', page=total_paginas) }}">Última »</a>
+  {% else %}
+  {% include "partials/feed_items.html" %}
   {% endif %}
 </div>
 
-<!-- Script de actualización automática -->
-<script src="{{ url_for('static', filename='js/feed.js') }}"></script>
-{% endblock %}
+<!-- Navegación de paginación -->
+<hr>
+{% set inicio = 1 if pagina - 10 < 1 else pagina - 10 %} {% set fin=total_paginas if pagina + 6> total_paginas else
+  pagina + 6 %}
+  <div class="bd-example m-0 border-0">
+    <nav aria-label="Ejemplo de paginación">
+      <ul class="pagination pagination-lg flex-wrap justify-content-center">
+        {% if pagina > 1 %}
+        <li class="page-item">
+          <a class="page-link" href="{{ url_for('feed.ver_feed', page=1) }}">« Primera</a>
+        </li>
+        <li class="page-item">
+          <a class="page-link" href="{{ url_for('feed.ver_feed', page=pagina-1) }}">← Anterior</a>
+        </li>
+        {% endif %}
+
+        {% for p in range(inicio, fin + 1) %}
+        <li class="page-item {% if p == pagina %}active{% endif %}">
+          <a class="page-link" href="{{ url_for('feed.ver_feed', page=p) }}">
+            {% if p == pagina %}
+            <strong>{{ p }}</strong>
+            {% else %}
+            {{ p }}
+            {% endif %}
+          </a>
+        </li>
+        {% endfor %}
+
+        {% if pagina < total_paginas %} <li class="page-item">
+          <a class="page-link" href="{{ url_for('feed.ver_feed', page=pagina+1) }}">Siguiente →</a>
+          </li>
+          <li class="page-item">
+            <a class="page-link" href="{{ url_for('feed.ver_feed', page=total_paginas) }}">Última »</a>
+          </li>
+          {% endif %}
+      </ul>
+    </nav>
+  </div>
+
+  <!-- Script de actualización automática -->
+  <script src="{{ url_for('static', filename='js/feed.js') }}"></script>
+  {% endblock %}

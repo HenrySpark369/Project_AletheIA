@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 
 load_dotenv()  # Carga variables desde .env
 
+
 class Config:
     DEBUG = False
     TESTING = False
@@ -24,12 +25,15 @@ class Config:
     # SECRET KEY FLASH
     SECRET_KEY = os.getenv("SECRET_KEY", "clave-fallback")
 
+
 class DevelopmentConfig(Config):
     DEBUG = True
+
 
 class ProductionConfig(Config):
     DATABASE_URI = os.getenv("DATABASE_URL", Config.DATABASE_URI)
     DB_PATH = os.getenv("DB_PATH", "database.db")
+
 
 config = {
     "development": DevelopmentConfig,

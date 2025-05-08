@@ -1,29 +1,51 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h2>Agentes creados</h2>
-<table border="1" cellpadding="5">
-    <tr>
-        <th>ID</th><th>Nombre</th><th>Edad</th><th>Intereses</th>
-        <th>Tono</th><th>Objetivo</th><th>Tipo</th><th>Muro</th><th>Acciones</th>
-    </tr>
-    {% for agente in agentes %}
-    <tr>
-        <td>{{ agente.id }}</td>
-        <td>{{ agente.nombre }}</td>
-        <td>{{ agente.edad }}</td>
-        <td>{{ agente.intereses }}</td>
-        <td>{{ agente.tono }}</td>
-        <td>{{ agente.objetivo }}</td>
-        <td>{{ agente.tipo_agente }}</td>
-        <td><a href="/agente/{{ agente.id }}">🌐 Ver muro</a></td>
-        <td>
-            <form action="/eliminar_agente/{{ agente.id }}" method="post" style="display:inline;">
-                <button type="submit" onclick="return confirm('¿Eliminar este agente?')">🗑 Eliminar</button>
-            </form>
-            <a href="/editar_agente/{{ agente.id }}">✏️ Editar</a>
-        </td>
-    </tr>
-    {% endfor %}
-</table>
+<div class="container">
+    <h2>Agentes creados</h2>
+    <div class="table-responsive">
+        <table class="table table-striped table-bordered">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nombre</th>
+                    <th>Edad</th>
+                    <th>Intereses</th>
+                    <th>Tono</th>
+                    <th>Objetivo</th>
+                    <th>Tipo</th>
+                    <th>Muro</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for agente in agentes %}
+                <tr>
+                    <td>{{ agente.id }}</td>
+                    <td>{{ agente.nombre }}</td>
+                    <td>{{ agente.edad }}</td>
+                    <td>{{ agente.intereses }}</td>
+                    <td>{{ agente.tono }}</td>
+                    <td>{{ agente.objetivo }}</td>
+                    <td>{{ agente.tipo_agente }}</td>
+                    <td><a href="/agente/{{ agente.id }}">🌐 Ver muro</a></td>
+                    <td>
+                        <div class="d-flex gap-2">
+                            <form action="/eliminar_agente/{{ agente.id }}" method="post" class="d-inline">
+                                <button type="submit" class="btn btn-danger btn-sm"
+                                    onclick="return confirm('¿Eliminar este agente?')">
+                                    <i class="bi bi-trash"></i> Eliminar
+                                </button>
+                            </form>
+                            <a href="/editar_agente/{{ agente.id }}" class="btn btn-primary btn-sm">
+                                <i class="bi bi-pencil"></i> Editar
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
 {% endblock %}

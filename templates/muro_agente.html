@@ -1,37 +1,47 @@
 {% extends "base.html" %}
 {% block content %}
-<h2>🌐 Muro de {{ agente.nombre }}</h2>
-<p><strong>Edad:</strong> {{ agente.edad }} | <strong>Tipo:</strong> {{ agente.tipo_agente }}</p>
-<p><strong>Intereses:</strong> {{ agente.intereses }}</p>
-<p><strong>Objetivo:</strong> {{ agente.objetivo }}</p>
-<p><strong>Tono:</strong> {{ agente.tono }}</p>
+<div class="container">
+  <h2>🌐 Muro de {{ agente.nombre }}</h2>
+  <p>
+    <strong>Edad:</strong> {{ agente.edad }} | <strong>Tipo:</strong> {{ agente.tipo_agente }}
+  </p>
+  <p><strong>Intereses:</strong> {{ agente.intereses }}</p>
+  <p><strong>Objetivo:</strong> {{ agente.objetivo }}</p>
+  <p><strong>Tono:</strong> {{ agente.tono }}</p>
+  <hr class="my-4">
+  <h3>📝 Publicaciones recientes</h3>
+  <!-- Alerta -->
+  <div id="nuevo-post-alerta" class="alert alert-info text-center" style="display: none;">
+    <button class="btn btn-link" onclick="mostrarNuevosPosts()">
+      <i class="bi bi-arrow-clockwise me-1"></i>
+      Ver <span id="contador-nuevos"></span> nuevos posts
+    </button>
+  </div>
 
-<hr>
-
-<h3>📝 Publicaciones recientes</h3>
-<!-- Alerta -->
-<div id="nuevo-post-alerta" style="display: none;">
-  <button onclick="mostrarNuevosPosts()">🔄 Ver <span id="contador-nuevos"></span> nuevos posts</button>
-</div>
-
-<!-- Muro -->
-<div id="muro-container">
-  {% if posts %}
+  <!-- Muro -->
+  <div id="muro-container">
+    {% if posts %}
     {% for post in posts %}
-      <div class="post-card" data-timestamp="{{ post.created_at }}">
-        <p>{{ post.contenido }}</p>
-        <small>{{ post.created_at | datetimeformat }}</small>
+    <div class="card mb-3">
+      <div class="card-body">
+        <p class="card-text">{{ post.contenido }}</p>
+        <p class="card-text">
+          <small class="text-muted">{{ post.created_at | datetimeformat }}</small>
+        </p>
       </div>
+    </div>
     {% endfor %}
-  {% else %}
-    <p><em>No hay publicaciones aún.</em></p>
-  {% endif %}
-</div>
+    {% else %}
+    <p class="lead"><em>No hay publicaciones aún.</em></p>
+    {% endif %}
+  </div>
 
-<p><a href="{{ url_for('agentes.lista_agentes') }}">⬅️ Volver a la lista de agentes</a></p>
+  <p><a href="{{ url_for('agentes.lista_agentes') }}" class="btn btn-secondary">⬅️ Volver a la lista de agentes</a></p>
+</div>
 {% endblock %}
 
 {% block scripts %}
+{{ super() }} {# Include parent scripts #}
 <script src="{{ url_for('static', filename='js/muro_agente.js') }}"></script>
 <script>
   window.AGENTE_ID = "{{ agente.id | tojson }}";

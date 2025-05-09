@@ -1,5 +1,7 @@
 # 🧠 Project AletheIA
 
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/HenrySpark369/Project_AletheIA)
+
 **Simulación social + OSINT + IA generativa**  
 Plataforma modular para analizar comportamiento en redes, detectar clones digitales y generar contenido automatizado con agentes virtuales.
 

@@ -100,7 +100,11 @@ def obtener_tema_en_tendencia_desde_cache(tipo_agente, geo="MX-DIF", ttl_horas=1
                 if not top_tema:
                     top_tema = obtener_tema(tipo_agente)
 
-                guardar_tema_en_cache(tipo_agente, top_tema)
+                if isinstance(top_tema, tuple) and len(top_tema) == 3:
+                    tema, promedio, ultimo_valor = top_tema
+                    guardar_tema_en_cache(tipo_agente, tema, promedio=promedio, ultimo_valor=ultimo_valor)
+                else:
+                    guardar_tema_en_cache(tipo_agente, top_tema)
                 print(f"[CACHE] Tema guardado para {tipo_agente}: {top_tema}")
                 return top_tema, None, None
 

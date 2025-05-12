@@ -113,6 +113,33 @@ def obtener_tema_en_tendencia_desde_cache(tipo_agente, geo="MX-DIF", ttl_horas=1
                 raise e
     raise Exception("Base de datos bloqueada tras varios intentos.")
 
+def TrendReqSeguro(*args, **kwargs):
+    from pytrends.request import TrendReq
+    from urllib3.util.retry import Retry
+    from requests.adapters import HTTPAdapter
+    import requests
+
+    retry_strategy = Retry(
+        total=kwargs.pop('retries', 3),
+        backoff_factor=kwargs.pop('backoff_factor', 0.3),
+        allowed_methods=frozenset(['GET', 'POST'])
+    )
+
+    adapter = HTTPAdapter(max_retries=retry_strategy)
+    session = requests.Session()
+    session.mount("https://", adapter)
+    session.mount("http://", adapter)
+
+    headers = kwargs.pop("requests_args", {}).get("headers", {'User-Agent': 'Mozilla/5.0'})
+
+    pytrends = TrendReq(
+        *args,
+        requests_args={"headers": headers},
+        **kwargs
+    )
+    pytrends.session = session  # Asigna la sesión directamente
+    return pytrends
+
 from pytrends.request import TrendReq
 import sqlite3
 from datetime import datetime, timedelta
@@ -136,7 +163,7 @@ def obtener_tendencias(tema, geo="MX-DIF", usar_cache=True, ttl_horas=1):
                 return tema, float(promedio), float(ultimo_valor)
 
     # Si no está en caché o no se desea usar
-    pytrends = TrendReq(
+    pytrends = TrendReqSeguro(
         hl='es-MX',
         tz=360,
         timeout=(5, 10),
@@ -221,7 +248,7 @@ def guardar_tema_en_cache(tipo_agente, tema, promedio=None, ultimo_valor=None):
         print(f"[ERROR] No se pudo guardar el tema en cache: {e}")
 
 def tendencias(tipo_agente=None, geo="MX", max_bloques=5):
-    pytrends = TrendReq(
+    pytrends = TrendReqSeguro(
         hl='es-MX',
         tz=360,
         timeout=(5, 10),

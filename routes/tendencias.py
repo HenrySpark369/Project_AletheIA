@@ -21,12 +21,12 @@ def ver_tendencias():
                 resultado = obtener_tendencias(tema, geo)
                 if resultado:
                     tema, promedio, ultimo_valor = resultado
-                    insertar_o_actualizar_tendencia("general", tema, resultados)
                     resultados = {
                         "tema": tema,
                         "promedio": promedio,
                         "ultimo_valor": ultimo_valor
                     }
+                    insertar_o_actualizar_tendencia("general", tema, resultados)
                 else:
                     mensaje = "No se encontraron datos relevantes para ese tema."
             except Exception as e:

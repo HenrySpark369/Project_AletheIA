@@ -8,13 +8,12 @@ client = OpenAI(api_key=OPENAI_API_KEY)
 
 def generar_post(agente, contexto):
     prompt = textwrap.dedent(f"""
-        Eres un usuario de redes sociales con esta personalidad:
-        Nombre: {agente['nombre']}, Edad: {agente['edad']}
-        Intereses: {agente['intereses']}
-        Tono: {agente['tono']}
-        Objetivo: {agente['objetivo']}
-        Tipo: {agente['tipo_agente']}
-        Crea un **micro-post de máximo 2 frases**, directo y breve, considerando tus intereses, tono, objetivo y tipo de agente que eres, relacionalo al tema del contexto.
+        Eres {agente['nombre']} de Edad: {agente['edad']},
+        te interesa {agente['intereses']}, habitualmente te diriges con tono {agente['tono']},
+        AL usar las redes, tienes como objetivo {agente['objetivo']}
+        Actuas como un {agente['tipo_agente']}
+        Máximo 2 frases**, directo y breve, considerando tus intereses, tono, objetivo y tipo de agente que eres, relacionalo al tema del contexto, 
+        el promedio y ultimo vlaor solo son comparativos de relevancia.
         Usa emojis solo si encajan naturalmente con el tono del personaje.
 
         Tema: {contexto}

@@ -9,6 +9,7 @@ from datetime import datetime
 from routes.simulador import simulador_bp
 from routes.admin import admin_bp
 from routes.clones import bp as clones_bp
+from routes.imitador_analysis import imitador_analysis_bp
 
 def create_app():
     entorno = os.getenv("FLASK_ENV", "development")
@@ -31,6 +32,7 @@ def create_app():
     app.register_blueprint(simulador_bp)
     app.register_blueprint(admin_bp)
     app.register_blueprint(clones_bp)
+    app.register_blueprint(imitador_analysis_bp)
 
     # Ruta de salud
     @app.route("/health")
@@ -42,11 +44,20 @@ def create_app():
 if __name__ == "__main__":
     app = create_app()
 
-    # Inicializa DB solo si se solicita explícitamente
-    if os.getenv("INIT_DB", "false").lower() == "true":
-        from utils.init_db import init_db
-        init_db()
+    is_gunicorn = "gunicorn" in os.environ.get("SERVER_SOFTWARE", "")
+
+    if not is_gunicorn:
+        # Ejecutar tareas solo si no es Gunicorn (modo desarrollo)
+        if os.getenv("INIT_DB", "false").lower() == "true":
+            from utils.init_db import init_db
+            init_db()
+
+        from services.simulador_scheduler import iniciar_scheduler
+        iniciar_scheduler()
+
+        app.run(host="0.0.0.0", debug=app.config["DEBUG"])
+
+elif os.getenv("RUN_MAIN") == "true" and "gunicorn" not in os.environ.get("SERVER_SOFTWARE", ""):
+    # Protección para reinicios de Flask autoreload que ejecutan __main__ varias veces
     from services.simulador_scheduler import iniciar_scheduler
     iniciar_scheduler()
-
-    app.run(host="0.0.0.0", debug=app.config["DEBUG"])

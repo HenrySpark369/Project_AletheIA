@@ -7,14 +7,19 @@ function actualizarFeed() {
     .then(response => response.text())
     .then(html => {
       if (html.trim()) {
-        nuevosHTML = html;
-
         const tempDiv = document.createElement('div');
         tempDiv.innerHTML = html;
         const nuevos = tempDiv.querySelectorAll('[data-timestamp]').length;
 
-        document.getElementById("contador-nuevos").innerText = `${nuevos}`;
-        document.getElementById("nuevo-post-alerta").style.display = "block";
+        if (nuevos > 0) {
+          nuevosHTML = html;
+          document.getElementById("contador-nuevos").innerText = `${nuevos}`;
+          document.getElementById("nuevo-post-alerta").style.display = "block";
+          const primerNuevo = tempDiv.querySelector('[data-timestamp]');
+          if (primerNuevo) {
+            ultimoTimestamp = primerNuevo.getAttribute('data-timestamp');
+          }
+        }
       }
     });
 }

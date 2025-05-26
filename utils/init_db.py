@@ -1,7 +1,13 @@
 import sqlite3
+import os
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from config import Config
+DB_PATH = Config.DB_PATH
 
 def init_db():
-    with sqlite3.connect("database.db", timeout=60) as conn:
+    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
+    with sqlite3.connect(DB_PATH, timeout=60) as conn:
         c = conn.cursor()
 
         # Activar integridad referencial
@@ -62,6 +68,23 @@ def init_db():
             )
         """)
 
+                # Tabla de resultados de imitadores detectados
+        c.execute("""
+            CREATE TABLE IF NOT EXISTS deteccion_imitadores (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                agente_a_id INTEGER,
+                agente_b_id INTEGER,
+                score_semantico REAL,
+                score_temas REAL,
+                score_total REAL,
+                posible_imitador_id INTEGER,
+                fecha_analisis TEXT,
+                FOREIGN KEY (agente_a_id) REFERENCES agentes(id),
+                FOREIGN KEY (agente_b_id) REFERENCES agentes(id),
+                FOREIGN KEY (posible_imitador_id) REFERENCES agentes(id)
+            )
+        """)
+
         # Índices útiles
         c.execute("CREATE INDEX IF NOT EXISTS idx_posts_agente_id ON posts(agente_id);")
         c.execute("CREATE INDEX IF NOT EXISTS idx_posts_created_at ON posts(created_at);")
@@ -82,3 +105,7 @@ def init_db():
         # Modo WAL para concurrencia
         c.execute("PRAGMA journal_mode=WAL;")
         conn.commit()
+
+if __name__ == "__main__":
+    init_db()
+    print("[INIT_DB] Base de datos inicializada correctamente en:", DB_PATH)

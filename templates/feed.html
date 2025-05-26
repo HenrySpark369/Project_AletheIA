@@ -108,4 +108,8 @@
 
   <!-- Script de actualización automática -->
   <script src="{{ url_for('static', filename='js/feed.js') }}"></script>
+  <script>
+    // Llamar a actualizarFeed automáticamente cada 10 segundos
+    setInterval(actualizarFeed, 10000);
+  </script>
   {% endblock %}

@@ -110,6 +110,90 @@ Abre tu navegador en: [http://localhost:5000](http://localhost:5000)
 
 ---
 
+## 🐳 Dockerización y Gunicorn
+
+Este proyecto está preparado para ejecutarse en producción usando **Docker** con dos servicios independientes:
+
+- `web`: ejecuta el servidor Flask con Gunicorn.
+- `scheduler`: ejecuta el simulador de agentes periódicamente.
+
+### 📦 Construcción y ejecución
+
+```bash
+docker compose build
+docker compose up
+```
+
+El archivo `docker-compose.yml` gestiona ambos servicios. Asegúrate de tener Docker y Docker Compose instalados.
+
+### 🔧 Ejecución manual con Gunicorn (sin Docker)
+
+```bash
+gunicorn -w 4 -b 0.0.0.0:5000 "app:create_app()"
+```
+
+Este comando lanza la app con 4 workers usando el factory method `create_app()`.
+
+### 🧠 Scheduler independiente
+
+Para ejecutar el simulador de agentes como un proceso separado:
+
+```bash
+python scheduler_runner.py
+```
+
+Asegúrate de definir esta variable de entorno antes de correrlo:
+
+```bash
+export ENABLE_SCHEDULER=true
+```
+
+Este proceso se puede mantener activo por separado o gestionarse como servicio externo (ej. PM2, systemd, etc.).
+
+### 🧰 Comandos útiles con Docker
+
+**Construir la imagen:**
+```bash
+docker compose build
+```
+
+**Iniciar los servicios (web + scheduler):**
+```bash
+docker compose up
+```
+
+**Iniciar en segundo plano (modo detached):**
+```bash
+docker compose up -d
+```
+
+**Detener todos los servicios:**
+```bash
+docker compose down
+```
+
+**Ver logs de todos los servicios:**
+```bash
+docker compose logs -f
+```
+
+**Ver logs de un servicio específico (ej. `scheduler`):**
+```bash
+docker compose logs -f scheduler
+```
+
+**Reconstruir imagen desde cero:**
+```bash
+docker compose build --no-cache
+```
+
+**Acceder al contenedor web (para debug):**
+```bash
+docker exec -it aegisnet_web /bin/bash
+```
+
+> 📝 Asegúrate de tener `Docker` y `docker compose` instalados antes de usar estos comandos.
+
 ## 📊 Funcionalidades Principales
 
 | Módulo           | Descripción                                                                 |

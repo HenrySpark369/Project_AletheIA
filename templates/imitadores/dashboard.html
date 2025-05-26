@@ -1,0 +1,118 @@
+<!DOCTYPE html>  
+<html>  
+<head>  
+    <title>Análisis de Imitadores - Project AletheIA</title>  
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>  
+    <style>  
+        .dashboard-container { max-width: 1200px; margin: 0 auto; padding: 20px; }  
+        .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px; }  
+        .metric-card { background: #f8f9fa; padding: 20px; border-radius: 8px; text-align: center; }  
+        .metric-value {
+            font-size: 24px;
+            font-weight: bold;
+        }
+    </style>  
+</head>  
+<body>  
+    <div class="dashboard-container">
+        <h1>Análisis de Imitadores</h1>
+
+        <!-- Formulario para ejecutar análisis -->
+        <form id="analisis-form">
+            <label>Umbral de similitud:
+                <input type="number" name="umbral" step="0.01" value="0.75">
+            </label>
+            <label>Ventana en días:
+                <input type="number" name="ventana_dias" value="180">
+            </label>
+            <div id="spinner" style="display: none; margin-top: 10px;">
+                <em>Procesando análisis...</em>
+            </div>
+            <button type="submit">Ejecutar análisis</button>
+        </form>
+
+        <div id="mensaje-resultado" style="margin-top:20px;"></div>
+
+        <hr>
+
+        <h2>Métricas recientes</h2>
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <div>Total Detecciones</div>
+                <div class="metric-value" id="total-detecciones">-</div>
+            </div>
+            <div class="metric-card">
+                <div>Score Promedio</div>
+                <div class="metric-value" id="score-promedio">-</div>
+            </div>
+            <div class="metric-card">
+                <div>Agentes Analizados</div>
+                <div class="metric-value" id="agentes-analizados">-</div>
+            </div>
+        </div>
+
+        <hr>
+
+        <h2>Últimos Resultados</h2>
+        <div id="tabla-resultados"></div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const form = document.getElementById("analisis-form");
+
+            form.addEventListener("submit", async function(e) {
+                e.preventDefault();
+                const formData = new FormData(form);
+                document.getElementById("spinner").style.display = "block";
+                try {
+                    const response = await fetch("/ejecutar-analisis", {
+                        method: "POST",
+                        body: formData
+                    });
+                    const reader = response.body.getReader();
+                    const decoder = new TextDecoder("utf-8");
+                    let resultadoParcial = "";
+
+                    while (true) {
+                        const { value, done } = await reader.read();
+                        if (done) break;
+                        const decodedChunk = decoder.decode(value, { stream: true });
+                        document.getElementById("mensaje-resultado").innerHTML += decodedChunk.replace(/\n/g, "<br>");
+                    }
+
+                    await cargarMetricas();
+                    await cargarResultados();
+                    document.getElementById("spinner").style.display = "none";
+                } catch (error) {
+                    console.error("Error al ejecutar análisis:", error);
+                    document.getElementById("mensaje-resultado").textContent = "Error al conectar con el servidor.";
+                    document.getElementById("spinner").style.display = "none";
+                }
+            });
+
+            async function cargarMetricas() {
+                const res = await fetch("/metricas-api");
+                const data = await res.json();
+                document.getElementById("total-detecciones").textContent = data.total_detecciones;
+                document.getElementById("score-promedio").textContent = data.score_promedio;
+                document.getElementById("agentes-analizados").textContent = data.agentes_analizados;
+            }
+
+            async function cargarResultados() {
+                const res = await fetch("/resultados-analisis");
+                const html = await res.text();
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, "text/html");
+                const tabla = doc.querySelector("table");
+                const error = doc.querySelector("p[style*='red']");
+                document.getElementById("tabla-resultados").innerHTML = tabla ? tabla.outerHTML : (error ? error.outerHTML : "<p>No hay resultados aún.</p>");
+            }
+
+            // Ejecutar en carga inicial
+            cargarMetricas();
+            cargarResultados();
+        });
+    </script>
+</body>  
+</html>

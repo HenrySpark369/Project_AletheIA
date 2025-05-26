@@ -10,10 +10,10 @@ class Config:
     TESTING = False
 
     # Para uso con ORMs como SQLAlchemy (opcional)
-    DATABASE_URI = "sqlite:///database.db"
+    DATABASE_URI = "sqlite:///data/database.db"
 
     # Para uso directo con sqlite3
-    DB_PATH = os.getenv("DB_PATH", "database.db")
+    DB_PATH = os.getenv("DB_PATH", os.path.join("data", "database.db"))
 
     # APIs
     OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
@@ -32,7 +32,7 @@ class DevelopmentConfig(Config):
 
 class ProductionConfig(Config):
     DATABASE_URI = os.getenv("DATABASE_URL", Config.DATABASE_URI)
-    DB_PATH = os.getenv("DB_PATH", "database.db")
+    DB_PATH = os.getenv("DB_PATH", os.path.join("data", "database.db"))
 
 
 config = {

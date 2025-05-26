@@ -1,6 +1,6 @@
 {% if posts %}
   {% for post in posts %}
-    <div class="post-card" data-timestamp="{{ post.created_at }}">
+    <div class="post-card" data-timestamp="{{ post.created_at | datetimeformat('%Y-%m-%dT%H:%M:%S') }}">
       <p>{{ post.contenido }}</p>
       <small>{{ post.created_at | datetimeformat }}</small>
     </div>

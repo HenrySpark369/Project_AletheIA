@@ -1,0 +1,32 @@
+services:
+  web:
+    image: social_agents_sim:web
+    build: .
+    container_name: aegisnet_web
+    ports:
+      - "5000:5000"
+    volumes:
+      - .:/app
+      - ./data:/app/data
+    env_file:
+      - .env
+    environment:
+      - FLASK_ENV=production
+      - ENABLE_SCHEDULER=false  # explícitamente desactivado
+    restart: always
+
+  scheduler:
+    image: social_agents_sim:scheduler
+    build: .
+    container_name: aegisnet_scheduler
+    command: ["python", "scheduler_runner.py"]
+    volumes:
+      - ./data:/app/data
+    env_file:
+      - .env
+    environment:
+      - FLASK_ENV=production
+      - ENABLE_SCHEDULER=true
+    depends_on:
+      - web
+    restart: always

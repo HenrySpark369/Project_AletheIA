@@ -1,0 +1,32 @@
+# Ignorar archivos y carpetas que no deben copiarse al contenedor
+
+# Entornos virtuales
+venv/
+.env/
+*.env
+
+# Archivos de Python compilados
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Archivos de logs y dumps
+*.log
+*.sqlite
+*.db
+*.dump
+
+# Git y otros archivos de control de versiones
+.git/
+.gitignore
+
+# Archivos del sistema operativo o del editor
+.DS_Store
+.vscode/
+.idea/
+*.swp
+
+# Archivos temporales
+*.bak
+*.tmp

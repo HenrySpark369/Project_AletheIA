@@ -1,10 +1,15 @@
+import os
+from config import config
+entorno = os.getenv("FLASK_ENV", "development")
+DB_PATH = config[entorno].DB_PATH
+
 import sqlite3
 from datetime import datetime, timedelta
 
 def insertar_o_actualizar_tendencia(tipo_agente, tema, resultado):
     try:
         ahora = datetime.now().isoformat()
-        with sqlite3.connect("database.db", timeout=60) as conn:
+        with sqlite3.connect(DB_PATH, timeout=60) as conn:
             c = conn.cursor()
 
             # Si ya existe, actualiza solo el campo resultado y actualizado_en
@@ -29,7 +34,7 @@ def obtener_tendencias_recientes(ttl_horas=1):
     limite = datetime.now() - timedelta(hours=ttl_horas)
     limite_iso = limite.isoformat()
 
-    with sqlite3.connect("database.db", timeout=60) as conn:
+    with sqlite3.connect(DB_PATH, timeout=60) as conn:
         conn.row_factory = sqlite3.Row
         c = conn.cursor()
         filas = c.execute("""

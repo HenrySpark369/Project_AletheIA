@@ -36,29 +36,47 @@ class SemanticSimilarityService:
               
         return self.model.encode(contenidos)  
       
-    def similitud_semantica_agentes(self, agente_id_a, agente_id_b, ventana_dias=30):  
-        """Calcula similitud semántica entre dos agentes"""  
-        posts_a = self._obtener_posts_agente(agente_id_a, ventana_dias)  
-        posts_b = self._obtener_posts_agente(agente_id_b, ventana_dias)  
-          
-        if not posts_a or not posts_b:  
-            return 0.0  
-              
-        embeddings_a = self.calcular_embeddings_posts(posts_a)  
-        embeddings_b = self.calcular_embeddings_posts(posts_b)  
-          
-        if embeddings_a.size == 0 or embeddings_b.size == 0:  
-            return 0.0  
-              
-        # Calcular similitud promedio entre todos los pares  
-        similarities = []  
-        for emb_a in embeddings_a:  
-            for emb_b in embeddings_b:  
-                sim = cosine_similarity([emb_a], [emb_b])[0][0]  
-                if isinstance(sim, (int, float)) and not np.isnan(sim):
-                    similarities.append(sim)
+    def similitud_semantica_agentes(self, agente_id_a, agente_id_b, ventana_dias=30):
+        posts_a = self._obtener_posts_agente(agente_id_a, ventana_dias)
+        posts_b = self._obtener_posts_agente(agente_id_b, ventana_dias)
+
+        if not posts_a or not posts_b:
+            # print(f"⚠️ Sin posts: A={len(posts_a)}, B={len(posts_b)}")
+            return 0.0
+
+        # Filtramos textos útiles
+        textos_a = [
+            p["contenido"] for p in posts_a
+            if p.get("contenido") and "[Error generando post]" not in p["contenido"]
+        ]
+        textos_b = [
+            p["contenido"] for p in posts_b
+            if p.get("contenido") and "[Error generando post]" not in p["contenido"]
+        ]
+
+        if not textos_a or not textos_b:
+            # print(f"⚠️ Sin textos válidos: A={len(textos_a)}, B={len(textos_b)}")
+            return 0.0
+
+        try:
+            embeddings_a = self.model.encode(textos_a)
+            embeddings_b = self.model.encode(textos_b)
+        except Exception as e:
+            print(f"❌ Error generando embeddings: {e}")
+            return 0.0
+
+        if embeddings_a.size == 0 or embeddings_b.size == 0:
+            # print(f"⚠️ Embeddings vacíos: A={embeddings_a.shape}, B={embeddings_b.shape}")
+            return 0.0
+
+        similarities = []
+        for emb_a in embeddings_a:
+            sim = cosine_similarity([emb_a], embeddings_b).flatten()
+            valid_sims = sim[~np.isnan(sim)]
+            similarities.extend(valid_sims.tolist())
 
         if not similarities:
+            # print("⚠️ No se encontraron similitudes válidas.")
             return 0.0
 
         promedio = np.mean(similarities)

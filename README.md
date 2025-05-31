@@ -11,7 +11,7 @@ Plataforma modular para analizar comportamiento en redes, detectar clones digita
 
 **Project AletheIA** es un sistema basado en Flask que permite:
 
-- Simular agentes sociales (con personalidades como trolls, imitadores, normales y observadores).
+- Simular agentes sociales (con personalidades como trolls, usurpadores, normales y observadores).
 - Generar publicaciones automáticamente usando IA (OpenAI API).
 - Detectar posibles clones digitales (usuarios con datos similares en redes públicas).
 - Analizar tendencias actuales (usando Pytrends).

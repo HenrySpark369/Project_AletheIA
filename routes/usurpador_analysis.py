@@ -1,6 +1,6 @@
-# routes/imitador_analysis.py  
+# routes/usurpador_analysis.py  
 from flask import Blueprint, render_template, jsonify, request  
-from services.imitador_detection_service import ImitadorDetectionService  
+from services.usurpador_detection_service import UsurpadorDetectionService  
 from repositories.agente_repo import obtener_todos_los_agentes  
 import sqlite3  
 import os  
@@ -10,19 +10,19 @@ from datetime import datetime
 from itertools import combinations
 import logging
 
-imitador_analysis_bp = Blueprint("imitador_analysis", __name__)  
+usurpador_analysis_bp = Blueprint("usurpador_analysis", __name__)  
 
-@imitador_analysis_bp.route('/analisis-imitadores')  
-def dashboard_imitadores():  
-    """Dashboard principal para análisis de imitadores"""  
-    return render_template("imitadores/dashboard.html")  
+@usurpador_analysis_bp.route('/analisis-usurpadores')  
+def dashboard_usurpadores():  
+    """Dashboard principal para análisis de usurpadores"""  
+    return render_template("usurpadores/dashboard.html")  
 
-@imitador_analysis_bp.route('/ejecutar-analisis', methods=['POST'])
+@usurpador_analysis_bp.route('/ejecutar-analisis', methods=['POST'])
 def ejecutar_analisis():
     try:
         umbral = float(request.form.get('umbral', 0.30))
         ventana_dias = int(request.form.get('ventana_dias', 1))
-        detector = ImitadorDetectionService()
+        detector = UsurpadorDetectionService()
         agentes = obtener_todos_los_agentes()
 
         # Precargar última fecha de análisis para cada par (ordenando ids para normalizar)
@@ -34,7 +34,7 @@ def ejecutar_analisis():
                     CASE WHEN agente_a_id < agente_b_id THEN agente_a_id ELSE agente_b_id END AS id1,
                     CASE WHEN agente_a_id < agente_b_id THEN agente_b_id ELSE agente_a_id END AS id2,
                     MAX(fecha_analisis)
-                FROM deteccion_imitadores
+                FROM deteccion_usurpadores
                 GROUP BY id1, id2
             """)
             for row in cursor.fetchall():
@@ -47,13 +47,13 @@ def ejecutar_analisis():
                     CASE WHEN agente_a_id < agente_b_id THEN agente_a_id ELSE agente_b_id END AS id1,
                     CASE WHEN agente_a_id < agente_b_id THEN agente_b_id ELSE agente_a_id END AS id2,
                     d.score_total
-                FROM deteccion_imitadores d
+                FROM deteccion_usurpadores d
                 JOIN (
                     SELECT 
                         CASE WHEN agente_a_id < agente_b_id THEN agente_a_id ELSE agente_b_id END AS id1,
                         CASE WHEN agente_a_id < agente_b_id THEN agente_b_id ELSE agente_a_id END AS id2,
                         MAX(fecha_analisis) AS max_fecha
-                    FROM deteccion_imitadores
+                    FROM deteccion_usurpadores
                     GROUP BY id1, id2
                 ) x ON (
                     ((d.agente_a_id = x.id1 AND d.agente_b_id = x.id2) 
@@ -93,16 +93,16 @@ def ejecutar_analisis():
 
                 if score_final > umbral:
                     tipos = (agente_a["tipo_agente"], agente_b["tipo_agente"])
-                    if "imitador" not in tipos:
+                    if "usurpador" not in tipos:
                         continue
 
-                    if agente_a["tipo_agente"] == "imitador" and agente_b["tipo_agente"] != "imitador":
-                        posible_imitador_id = agente_a["id"]
-                    elif agente_b["tipo_agente"] == "imitador" and agente_a["tipo_agente"] != "imitador":
-                        posible_imitador_id = agente_b["id"]
+                    if agente_a["tipo_agente"] == "usurpador" and agente_b["tipo_agente"] != "usurpador":
+                        posible_usurpador_id = agente_a["id"]
+                    elif agente_b["tipo_agente"] == "usurpador" and agente_a["tipo_agente"] != "usurpador":
+                        posible_usurpador_id = agente_b["id"]
                     else:
-                        # Si ambos son "imitador" o ninguno calificado, por defecto asigna agente_a
-                        posible_imitador_id = agente_a["id"]
+                        # Si ambos son "usurpador" o ninguno calificado, por defecto asigna agente_a
+                        posible_usurpador_id = agente_a["id"]
 
                     # Verificar duplicado usando in-memory fechas
                     fecha_ultimo_analisis = get_last_date(agente_a["id"], agente_b["id"])
@@ -130,7 +130,7 @@ def ejecutar_analisis():
                         "score_temas": similitud_temas,
                         "score_total": score_final,
                         "fecha_analisis": fecha_mas_reciente,
-                        "posible_imitador": posible_imitador_id
+                        "posible_usurpador": posible_usurpador_id
                     })
                     # Actualizar last_dates para evitar reprocesar este par en el mismo run
                     key = (agente_a["id"], agente_b["id"]) if agente_a["id"] < agente_b["id"] else (agente_b["id"], agente_a["id"])
@@ -153,7 +153,7 @@ def ejecutar_analisis():
             if contador_total == 0:
                 yield "Análisis completado. No se encontraron coincidencias nuevas.\n"
             else:
-                yield f"Análisis completado. {contador_total} posibles imitadores detectados.\n"
+                yield f"Análisis completado. {contador_total} posibles usurpadores detectados.\n"
 
         return Response(stream_with_context(generar_respuesta()), mimetype='text/plain')
 
@@ -161,7 +161,7 @@ def ejecutar_analisis():
         logging.exception("Error en ejecutar_analisis")
         return Response(f"Error: {str(e)}\n", mimetype='text/plain', status=500)
 
-@imitador_analysis_bp.route('/resultados-analisis')  
+@usurpador_analysis_bp.route('/resultados-analisis')  
 def obtener_resultados():  
     """Devuelve una tabla HTML con los resultados más recientes del análisis"""  
     try:  
@@ -175,11 +175,11 @@ def obtener_resultados():
                 SELECT di.*,   
                        a1.nombre as agente_a_nombre,  
                        a2.nombre as agente_b_nombre,  
-                       a3.nombre as posible_imitador_nombre  
-                FROM deteccion_imitadores di  
+                       a3.nombre as posible_usurpador_nombre  
+                FROM deteccion_usurpadores di  
                 JOIN agentes a1 ON di.agente_a_id = a1.id  
                 JOIN agentes a2 ON di.agente_b_id = a2.id  
-                JOIN agentes a3 ON di.posible_imitador_id = a3.id  
+                JOIN agentes a3 ON di.posible_usurpador_id = a3.id  
                 WHERE DATE(di.fecha_analisis) = DATE('now')
                 ORDER BY di.score_total DESC, di.fecha_analisis DESC  
                 LIMIT 50  
@@ -196,9 +196,9 @@ def obtener_resultados():
                 return "-"
 
         # Construir tabla HTML  
-        tabla = "<table border='1'><thead><tr><th>Agente A</th><th>Agente B</th><th>Posible Imitador</th><th>Score Semántico</th><th>Score Temas</th><th>Score Total</th><th>Fecha</th></tr></thead><tbody>"  
+        tabla = "<table border='1'><thead><tr><th>Agente A</th><th>Agente B</th><th>Posible Usurpador</th><th>Score Semántico</th><th>Score Temas</th><th>Score Total</th><th>Fecha</th></tr></thead><tbody>"  
         for r in resultados:  
-            fila = f"<tr><td>{r['agente_a_nombre']}</td><td>{r['agente_b_nombre']}</td><td>{r['posible_imitador_nombre']}</td><td>{safe_round(r['score_semantico'])}</td><td>{safe_round(r['score_temas'])}</td><td>{safe_round(r['score_total'])}</td><td>{r['fecha_analisis']}</td></tr>"  
+            fila = f"<tr><td>{r['agente_a_nombre']}</td><td>{r['agente_b_nombre']}</td><td>{r['posible_usurpador_nombre']}</td><td>{safe_round(r['score_semantico'])}</td><td>{safe_round(r['score_temas'])}</td><td>{safe_round(r['score_total'])}</td><td>{r['fecha_analisis']}</td></tr>"  
             tabla += fila  
         tabla += "</tbody></table>"  
         return tabla  
@@ -206,7 +206,7 @@ def obtener_resultados():
     except Exception as e:  
         return f"<p style='color:red;'>Error: {str(e)}</p>"  
 
-@imitador_analysis_bp.route('/metricas-api')  
+@usurpador_analysis_bp.route('/metricas-api')  
 def metricas_api():  
     """API para métricas del dashboard"""  
     try:  
@@ -217,13 +217,13 @@ def metricas_api():
             cursor = conn.cursor()  
               
             # Total de detecciones (solo de la fecha actual)
-            cursor.execute("SELECT COUNT(*) FROM deteccion_imitadores WHERE DATE(fecha_analisis) = DATE('now')")
+            cursor.execute("SELECT COUNT(*) FROM deteccion_usurpadores WHERE DATE(fecha_analisis) = DATE('now')")
             total_detecciones = cursor.fetchone()[0]
               
             # Detecciones por día (últimos 7 días)  
             cursor.execute("""  
                 SELECT DATE(fecha_analisis) as fecha, COUNT(*) as cantidad  
-                FROM deteccion_imitadores   
+                FROM deteccion_usurpadores   
                 WHERE fecha_analisis >= datetime('now', '-7 days')  
                 GROUP BY DATE(fecha_analisis)  
                 ORDER BY fecha  
@@ -232,7 +232,7 @@ def metricas_api():
                                  for row in cursor.fetchall()]  
               
             # Score promedio (solo de la fecha actual)
-            cursor.execute("SELECT AVG(score_total) FROM deteccion_imitadores WHERE DATE(fecha_analisis) = DATE('now')")
+            cursor.execute("SELECT AVG(score_total) FROM deteccion_usurpadores WHERE DATE(fecha_analisis) = DATE('now')")
             score_promedio = cursor.fetchone()[0] or 0
               
         return jsonify({  

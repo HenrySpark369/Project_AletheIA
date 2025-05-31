@@ -1,0 +1,239 @@
+<!DOCTYPE html>  
+<html>  
+<head>  
+    <title>Análisis de Usurpadores - Project AletheIA</title>  
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>  
+    <style>  
+        .dashboard-container { max-width: 1200px; margin: 0 auto; padding: 20px; }  
+        .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px; }  
+        .metric-card { background: #f8f9fa; padding: 20px; border-radius: 8px; text-align: center; }  
+        .metric-value {
+            font-size: 24px;
+            font-weight: bold;
+        }
+    </style>  
+</head>  
+<body>  
+    <div class="dashboard-container">
+        <h1>Análisis de Usurpadores</h1>
+
+        <!-- Formulario para ejecutar análisis -->
+        <form id="analisis-form">
+            <label>Umbral de similitud:
+                <input type="number" name="umbral" step="0.01" value="0.30">
+            </label>
+            <label>Ventana en días:
+                <input type="number" name="ventana_dias" value="1">
+            </label>
+            <div id="spinner" style="display: none; margin-top: 10px;">
+                <em>Procesando análisis...</em>
+            </div>
+            <button type="submit">Ejecutar análisis</button>
+        </form>
+
+        <div id="mensaje-resultado" style="margin-top:20px;"></div>
+
+        <hr>
+
+        <h2>Métricas recientes</h2>
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <div>Total Detecciones</div>
+                <div class="metric-value" id="total-detecciones">-</div>
+            </div>
+            <div class="metric-card">
+                <div>Score Promedio</div>
+                <div class="metric-value" id="score-promedio">-</div>
+            </div>
+            <div class="metric-card">
+                <div>Agentes Analizados</div>
+                <div class="metric-value" id="agentes-analizados">-</div>
+            </div>
+        </div>
+
+        <hr>
+
+        <h2>Últimos Resultados</h2>
+        <div class="charts-container" style="display: flex; flex-wrap: wrap; gap: 30px; justify-content: space-between;">
+            <div class="chart-card" style="flex: 1 1 45%; max-width: 45%;">
+                <canvas id="chart-scores"></canvas>
+            </div>
+            <div class="chart-card" style="flex: 1 1 45%; max-width: 45%;">
+                <canvas id="chart-temporal"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+                // Cargar métricas iniciales al cargar la página
+                cargarMetricas();
+            const form = document.getElementById("analisis-form");
+
+            form.addEventListener("submit", async function(e) {
+                e.preventDefault();
+                const formData = new FormData(form);
+                document.getElementById("spinner").style.display = "block";
+                try {
+                    const response = await fetch("/ejecutar-analisis", {
+                        method: "POST",
+                        body: formData
+                    });
+                    const reader = response.body.getReader();
+                    const decoder = new TextDecoder("utf-8");
+                    let resultadoParcial = "";
+
+                    while (true) {
+                        const { value, done } = await reader.read();
+                        if (done) break;
+                        const decodedChunk = decoder.decode(value, { stream: true });
+                        document.getElementById("mensaje-resultado").innerHTML += decodedChunk.replace(/\n/g, "<br>");
+                    }
+
+                    await cargarMetricas();
+                    document.getElementById("spinner").style.display = "none";
+                } catch (error) {
+                    console.error("Error al ejecutar análisis:", error);
+                    document.getElementById("mensaje-resultado").textContent = "Error al conectar con el servidor.";
+                    document.getElementById("spinner").style.display = "none";
+                }
+            });
+
+            async function cargarMetricas() {
+                const res = await fetch("/metricas-api");
+                const data = await res.json();
+                document.getElementById("total-detecciones").textContent = data.total_detecciones;
+                document.getElementById("score-promedio").textContent = data.score_promedio;
+                document.getElementById("agentes-analizados").textContent = data.agentes_analizados;
+            }
+
+    // Función para obtener y parsear la tabla HTML y extraer datos
+    async function obtenerDatosComoJSON() {
+        const res = await fetch("/resultados-analisis");
+        const htmlText = await res.text();
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(htmlText, "text/html");
+        const filas = doc.querySelectorAll("tbody tr");
+        const etiquetas = [];
+        const scores = [];
+        const scoresPorFecha = {};
+
+        filas.forEach(tr => {
+            const celdas = tr.querySelectorAll("td");
+            const agenteA = celdas[0].textContent.trim();
+            const agenteB = celdas[1].textContent.trim();
+            const posibleUsurpador = celdas[2].textContent.trim();
+            // Determinar quién está siendo imitado
+            const imitado = posibleUsurpador === agenteA ? agenteB : agenteA;
+            const scoreTotal = parseFloat(celdas[5].textContent);
+            const fechaRaw = celdas[6].textContent;
+            const diaKey = fechaRaw.split("T")[0];
+
+            etiquetas.push(`${posibleUsurpador} imita a ${imitado} (${scoreTotal.toFixed(3)})`);
+
+            scores.push(scoreTotal);
+
+            if (!scoresPorFecha[diaKey]) {
+                scoresPorFecha[diaKey] = [];
+            }
+            scoresPorFecha[diaKey].push(scoreTotal);
+        });
+
+        // Ordenar etiquetas y scores de mayor a menor
+        const combinado = etiquetas.map((label, i) => ({ label, score: scores[i] }));
+        combinado.sort((a, b) => b.score - a.score);
+        const ordenEtiquetas = combinado.map(item => item.label);
+        const ordenScores = combinado.map(item => item.score);
+
+        const fechasUnicas = Object.keys(scoresPorFecha).sort((a, b) => new Date(a) - new Date(b));
+        const promedioPorFecha = fechasUnicas.map(fecha => {
+            const arr = scoresPorFecha[fecha];
+            const suma = arr.reduce((acc, v) => acc + v, 0);
+            return +(suma / arr.length).toFixed(3);
+        });
+
+        return {
+            etiquetas: ordenEtiquetas,
+            scores: ordenScores,
+            fechasUnicas,
+            promedioPorFecha
+        };
+    }
+
+    // Dibujar gráfico de barras horizontales: Score Total por par de agentes
+    async function dibujarGraficoScores() {
+        const data = await obtenerDatosComoJSON();
+        const ctx = document.getElementById("chart-scores").getContext("2d");
+
+        new Chart(ctx, {
+            type: "bar",
+            data: {
+                labels: data.etiquetas,
+                datasets: [{
+                    label: "Score Total",
+                    data: data.scores,
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                indexAxis: "y",
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        suggestedMax: 1
+                    }
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: ctx => `Total: ${ctx.parsed.x.toFixed(3)}`
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // Dibujar gráfica de línea: promedio de Score Total por día
+    async function dibujarGraficoTemporal() {
+        const data = await obtenerDatosComoJSON();
+        const ctx = document.getElementById("chart-temporal").getContext("2d");
+
+        new Chart(ctx, {
+            type: "line",
+            data: {
+                labels: data.fechasUnicas,
+                datasets: [{
+                    label: "Promedio Score Total (día)",
+                    data: data.promedioPorFecha,
+                    tension: 0.3,
+                    fill: false,
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        suggestedMax: 1
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: ctx => `Promedio: ${ctx.parsed.y.toFixed(3)}`
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // Llamar a las funciones de gráficos después de obtener métricas
+    dibujarGraficoScores();
+    dibujarGraficoTemporal();
+        });
+    </script>
+</body>  
+</html>

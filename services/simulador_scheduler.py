@@ -35,7 +35,7 @@ def ejecutar_simulacion_periodica():
         print(f"[SIMULADOR ERROR]: {e}")
 
 def precachear_tendencias():
-    tipos = ["normal", "imitador", "troll", "observador"]
+    tipos = ["normal", "usurpador", "troll", "observador"]
     for tipo in tipos:
         try:
             tema = obtener_tema_en_tendencia_desde_cache(tipo_agente=tipo, ttl_horas=1)

@@ -1,4 +1,4 @@
-# services/imitador_detection_service.py  
+# services/usurpador_detection_service.py  
 import sqlite3  
 from datetime import datetime  
 from collections import Counter  
@@ -21,25 +21,25 @@ if not logger.handlers:
     ch.setFormatter(formatter)
     logger.addHandler(ch)
 
-class ImitadorDetectionService:  
+class UsurpadorDetectionService:  
     def __init__(self):  
         entorno = os.getenv("FLASK_ENV", "development")  
         self.db_path = config[entorno].DB_PATH  
         self.semantic_service = SemanticSimilarityService(self.db_path)
         self._asegurar_indice_posts()
           
-    def detectar_imitadores_semanticos(self, umbral_similitud=0.75, ventana_dias=30, bloque_tamano=5):  
+    def detectar_usurpadores_semanticos(self, umbral_similitud=0.75, ventana_dias=30, bloque_tamano=5):  
         """  
-        Detecta agentes imitadores usando análisis semántico avanzado  
+        Detecta agentes usurpadores usando análisis semántico avanzado  
         Se integra con el sistema existente de agentes  
         """  
         agentes = obtener_todos_los_agentes()  
         resultados_deteccion = []  
           
-        # Solo comparar agentes de tipo 'imitador' contra los demás
-        imitadores = [a for a in agentes if a.get("tipo_agente") == "imitador"]
-        no_imitadores = [a for a in agentes if a.get("tipo_agente") != "imitador"]
-        combinaciones = [(imitador, otro) for imitador in imitadores for otro in no_imitadores]
+        # Solo comparar agentes de tipo 'usurpador' contra los demás
+        usurpadores = [a for a in agentes if a.get("tipo_agente") == "usurpador"]
+        no_usurpadores = [a for a in agentes if a.get("tipo_agente") != "usurpador"]
+        combinaciones = [(usurpador, otro) for usurpador in usurpadores for otro in no_usurpadores]
         total = len(combinaciones)
         for offset in range(0, total, bloque_tamano):
             combinaciones_en_bloque = combinaciones[offset:offset + bloque_tamano]
@@ -67,7 +67,7 @@ class ImitadorDetectionService:
                         "score_temas": similitud_temas,
                         "score_total": score_final,
                         "fecha_analisis": datetime.now().isoformat(),
-                        "posible_imitador": agente_a["id"] if agente_a["id"] > agente_b["id"] else agente_b["id"]
+                        "posible_usurpador": agente_a["id"] if agente_a["id"] > agente_b["id"] else agente_b["id"]
                     }
                     resultados_deteccion.append(resultado)
 
@@ -133,9 +133,9 @@ class ImitadorDetectionService:
             # Insertar resultados  
             for resultado in resultados:  
                 cursor.execute("""
-                    INSERT INTO deteccion_imitadores
+                    INSERT INTO deteccion_usurpadores
                     (agente_a_id, agente_b_id, score_semantico, score_temas,
-                     score_total, posible_imitador_id, fecha_analisis)
+                     score_total, posible_usurpador_id, fecha_analisis)
                     VALUES (?, ?, ?, ?, ?, ?, ?)
                 """, (
                     resultado["agente_a"]["id"],
@@ -143,7 +143,7 @@ class ImitadorDetectionService:
                     resultado["score_semantico"],
                     resultado["score_temas"],
                     resultado["score_total"],
-                    resultado["posible_imitador"],
+                    resultado["posible_usurpador"],
                     resultado["fecha_analisis"]
                 ))
               

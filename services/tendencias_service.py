@@ -23,7 +23,7 @@ temas_por_tipo = {
         "divisiones sociales", "trolleo mediático", "noticias falsas",
         "comentarios sarcásticos", "odio digital"
     ],
-    "imitador": [
+    "usurpador": [
         "influencers en redes sociales", "giveaways", "tendencias de TikTok",
         "moda viral", "estilo de vida en Instagram", "reviews de gadgets",
         "viajes soñados", "videos de maquillaje", "estética minimalista",

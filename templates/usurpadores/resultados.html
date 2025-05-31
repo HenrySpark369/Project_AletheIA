@@ -1,11 +1,11 @@
-<!-- templates/imitadores/resultados.html -->
+<!-- templates/usurpadores/resultados.html -->
 <!DOCTYPE html>
 <html>
 <head>
     <title>Resultados del análisis</title>
 </head>
 <body>
-    <h1>Resultados de Detección de Imitadores</h1>
+    <h1>Resultados de Detección de Usurpadores</h1>
 
     {% if error %}
         <p style="color: red;">Error: {{ error }}</p>
@@ -15,7 +15,7 @@
                 <tr>
                     <th>Agente A</th>
                     <th>Agente B</th>
-                    <th>Posible Imitador</th>
+                    <th>Posible Usurpador</th>
                     <th>Score Semántico</th>
                     <th>Score Temas</th>
                     <th>Score Total</th>
@@ -27,7 +27,7 @@
                 <tr>
                     <td>{{ r.agente_a_nombre }}</td>
                     <td>{{ r.agente_b_nombre }}</td>
-                    <td>{{ r.posible_imitador_nombre }}</td>
+                    <td>{{ r.posible_usurpador_nombre }}</td>
                     <td>{{ r.score_semantico|round(3) }}</td>
                     <td>{{ r.score_temas|round(3) }}</td>
                     <td>{{ r.score_total|round(3) }}</td>

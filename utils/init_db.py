@@ -68,20 +68,20 @@ def init_db():
             )
         """)
 
-                # Tabla de resultados de imitadores detectados
+                # Tabla de resultados de usurpadores detectados
         c.execute("""
-            CREATE TABLE IF NOT EXISTS deteccion_imitadores (
+            CREATE TABLE IF NOT EXISTS deteccion_usurpadores (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 agente_a_id INTEGER,
                 agente_b_id INTEGER,
                 score_semantico REAL,
                 score_temas REAL,
                 score_total REAL,
-                posible_imitador_id INTEGER,
+                posible_usurpador_id INTEGER,
                 fecha_analisis TEXT,
                 FOREIGN KEY (agente_a_id) REFERENCES agentes(id),
                 FOREIGN KEY (agente_b_id) REFERENCES agentes(id),
-                FOREIGN KEY (posible_imitador_id) REFERENCES agentes(id)
+                FOREIGN KEY (posible_usurpador_id) REFERENCES agentes(id)
             )
         """)
 

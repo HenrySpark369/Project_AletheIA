@@ -20,7 +20,7 @@
 
   <label>Tipo de agente:</label><br>
   <select name="tipo_agente" required>
-    {% for tipo in ["normal", "imitador", "troll", "observador"] %}
+    {% for tipo in ["normal", "usurpador", "troll", "observador"] %}
       <option value="{{ tipo }}" {% if agente.tipo_agente == tipo %}selected{% endif %}>{{ tipo | capitalize }}</option>
     {% endfor %}
   </select><br><br>

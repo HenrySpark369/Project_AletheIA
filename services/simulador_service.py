@@ -20,7 +20,7 @@ class SimuladorDeAgentes:
         self.probabilidades = {
             "troll": 0.6,
             "normal": 0.3,
-            "imitador": 0.4,
+            "usurpador": 0.4,
             "observador": 0.1
         }
 
@@ -50,7 +50,7 @@ class SimuladorDeAgentes:
                     continue
 
                 try:
-                    if tipo == "imitador":
+                    if tipo == "usurpador":
                         tema, promedio, ultimo_valor = self.obtener_tema_cache(tipo)
 
                         try:
@@ -120,7 +120,7 @@ class SimuladorDeAgentes:
         self.hora_simulada += timedelta(seconds=random.randint(60, 150))
         return publicaciones
 
-    def imitar_agente(self, imitador):
+    def imitar_agente(self, usurpador):
         candidatos = [a for a in self.agentes if a["tipo_agente"] == "normal"]
         if not candidatos:
             return None, {"tema": "tema_general"}

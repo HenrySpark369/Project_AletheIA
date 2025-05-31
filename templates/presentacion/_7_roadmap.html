@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project AletheIA - Visión a Futuro</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+        .slide-container {
+            width: 1280px;
+            min-height: 720px;
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(135deg, #2a3c5c 0%, #3b4f73 100%);
+            color: white;
+        }
+        .gradient-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at bottom right, rgba(138, 79, 255, 0.18) 0%, rgba(42, 60, 92, 0) 70%);
+        }
+        .grid-pattern {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+            background-size: 20px 20px;
+            z-index: 0;
+        }
+        .content {
+            position: relative;
+            z-index: 2;
+            height: 100%;
+            padding: 60px;
+        }
+        .title {
+            font-size: 3.5rem;
+            font-weight: 700;
+            letter-spacing: -1px;
+            color: #ffffff;
+            line-height: 1.1;
+            margin-bottom: 40px;
+        }
+        .highlight {
+            color: #8A4FFF;
+            font-weight: 600;
+        }
+        .logo-watermark {
+            position: absolute;
+            bottom: 30px;
+            right: 40px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            opacity: 0.6;
+        }
+        .intro-text {
+            margin-bottom: 30px;
+            font-size: 1.2rem;
+            line-height: 1.5;
+            color: #A0AEC0;
+            max-width: 80%;
+        }
+        .vision-container {
+            display: flex;
+            margin-bottom: 40px;
+        }
+        .vision-block {
+            background: rgba(59, 130, 246, 0.1);
+            border-radius: 16px;
+            padding: 30px;
+            position: relative;
+            overflow: hidden;
+            flex: 1;
+        }
+        .vision-block::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 3px;
+            width: 100%;
+            background: linear-gradient(90deg, #3B82F6, #8A4FFF);
+        }
+        .vision-icon {
+            font-size: 2.5rem;
+            color: #8A4FFF;
+            margin-bottom: 15px;
+        }
+        .vision-title {
+            font-size: 1.8rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: white;
+        }
+        .vision-description {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            color: #CBD5E0;
+        }
+        .roadmap-timeline {
+            display: flex;
+            justify-content: space-between;
+            position: relative;
+            margin-top: 40px;
+        }
+        .roadmap-timeline::before {
+            content: '';
+            position: absolute;
+            top: 30px;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, #3B82F6, #8A4FFF);
+            z-index: 1;
+        }
+        .timeline-item {
+            position: relative;
+            width: 23%;
+            z-index: 2;
+        }
+        .timeline-point {
+            width: 60px;
+            height: 60px;
+            background: #2a3c5c;
+            border: 3px solid #3B82F6;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 20px;
+            position: relative;
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.5);
+        }
+        .timeline-point-icon {
+            font-size: 1.8rem;
+            color: #8A4FFF;
+        }
+        .timeline-content {
+            background: rgba(42, 60, 92, 0.7);
+            border-left: 3px solid #3B82F6;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        .timeline-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: white;
+        }
+        .timeline-description {
+            font-size: 0.95rem;
+            color: #CBD5E0;
+            line-height: 1.4;
+        }
+    </style>
+</head>
+<body>
+    <div class="slide-container">
+        <div class="grid-pattern"></div>
+        <div class="gradient-overlay"></div>
+        <div class="content">
+            <h1 class="title">Visión & <span class="highlight">Roadmap</span></h1>
+            
+            <div class="vision-container">
+                <div class="vision-block">
+                    <i class="fas fa-rocket vision-icon"></i>
+                    <h2 class="vision-title">Nuestra Visión</h2>
+                    <p class="vision-description">
+                        Posicionar AletheIA como un estándar global de análisis social automatizado y accesible, permitiendo a organizaciones de todos los sectores protegerse contra amenazas digitales, comprender dinámicas sociales y tomar decisiones informadas en tiempo real.
+                    </p>
+                </div>
+            </div>
+            
+            <div class="roadmap-timeline">
+                <div class="timeline-item">
+                    <div class="timeline-point">
+                        <i class="fas fa-shield-alt timeline-point-icon"></i>
+                    </div>
+                    <div class="timeline-content">
+                        <h3 class="timeline-title">Ciberseguridad</h3>
+                        <p class="timeline-description">
+                            Versión orientada a centros SOC y departamentos de seguridad digital, con capacidades avanzadas de detección de amenazas y alertas personalizables.
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="timeline-item">
+                    <div class="timeline-point">
+                        <i class="fas fa-graduation-cap timeline-point-icon"></i>
+                    </div>
+                    <div class="timeline-content">
+                        <h3 class="timeline-title">Educativa</h3>
+                        <p class="timeline-description">
+                            Adaptación para plataformas de aprendizaje y centros de investigación, con simulaciones predefinidas y herramientas de análisis para casos de estudio.
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="timeline-item">
+                    <div class="timeline-point">
+                        <i class="fas fa-chart-line timeline-point-icon"></i>
+                    </div>
+                    <div class="timeline-content">
+                        <h3 class="timeline-title">Inteligencia Digital</h3>
+                        <p class="timeline-description">
+                            Solución para consultoras y agencias de análisis, con capacidades extendidas de predicción y generación de reportes avanzados.
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="timeline-item">
+                    <div class="timeline-point">
+                        <i class="fas fa-code timeline-point-icon"></i>
+                    </div>
+                    <div class="timeline-content">
+                        <h3 class="timeline-title">Open Source</h3>
+                        <p class="timeline-description">
+                            Versión comunitaria limitada para fines académicos y pruebas de concepto, fomentando la colaboración y mejora continua.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="logo-watermark">
+                <span class="text-white">AletheIA</span>
+                <span class="text-purple-400">·</span>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

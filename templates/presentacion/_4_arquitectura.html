@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project AletheIA - Arquitectura Técnica</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+        .slide-container {
+            width: 1280px;
+            min-height: 720px;
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(135deg, #2a3c5c 0%, #3b4f73 100%);
+            color: white;
+        }
+        .gradient-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at bottom right, rgba(138, 79, 255, 0.18) 0%, rgba(42, 60, 92, 0) 70%);
+        }
+        .grid-pattern {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+            background-size: 20px 20px;
+            z-index: 0;
+        }
+        .content {
+            position: relative;
+            z-index: 2;
+            height: 100%;
+            padding: 60px;
+        }
+        .title {
+            font-size: 3.5rem;
+            font-weight: 700;
+            letter-spacing: -1px;
+            color: #ffffff;
+            line-height: 1.1;
+            margin-bottom: 30px;
+        }
+        .highlight {
+            color: #8A4FFF;
+            font-weight: 600;
+        }
+        .logo-watermark {
+            position: absolute;
+            bottom: 30px;
+            right: 40px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            opacity: 0.6;
+        }
+        .architecture-diagram {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 20px;
+            position: relative;
+        }
+        .diagram-container {
+            width: 800px;
+            height: 400px;
+            position: relative;
+            margin: 0 auto;
+        }
+        .module {
+            position: absolute;
+            width: 180px;
+            height: 180px;
+            background: rgba(59, 130, 246, 0.1);
+            border: 2px solid #3B82F6;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 15px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        .module:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.5);
+            z-index: 10;
+        }
+        .module-1 {
+            top: 0;
+            left: 0;
+        }
+        .module-2 {
+            top: 0;
+            right: 0;
+        }
+        .module-3 {
+            bottom: 0;
+            left: 0;
+        }
+        .module-4 {
+            bottom: 0;
+            right: 0;
+        }
+        .module-icon {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+            color: #3B82F6;
+        }
+        .module-title {
+            font-weight: 600;
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+            color: #ffffff;
+        }
+        .module-desc {
+            font-size: 0.8rem;
+            color: #CBD5E0;
+        }
+        .connector {
+            position: absolute;
+            background: #3B82F6;
+            z-index: 1;
+        }
+        .horizontal-connector {
+            height: 2px;
+            width: 440px;
+            top: 90px;
+            left: 180px;
+        }
+        .vertical-connector {
+            width: 2px;
+            height: 220px;
+            top: 90px;
+            left: 400px;
+        }
+        .horizontal-connector-2 {
+            height: 2px;
+            width: 440px;
+            top: 310px;
+            left: 180px;
+        }
+        .central-hub {
+            position: absolute;
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #8A4FFF, #3B82F6);
+            top: 150px;
+            left: 350px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
+            z-index: 2;
+        }
+        .tech-footer {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 15px 25px;
+            display: inline-flex;
+            align-items: center;
+            margin-top: 30px;
+        }
+        .tech-icon {
+            margin-right: 10px;
+            color: #8A4FFF;
+        }
+    </style>
+</head>
+<body>
+    <div class="slide-container">
+        <div class="grid-pattern"></div>
+        <div class="gradient-overlay"></div>
+        <div class="content">
+            <h1 class="title">Arquitectura <span class="highlight">Técnica</span></h1>
+            
+            <div class="architecture-diagram">
+                <div class="diagram-container">
+                    <!-- Conectores -->
+                    <div class="connector horizontal-connector"></div>
+                    <div class="connector vertical-connector"></div>
+                    <div class="connector horizontal-connector-2"></div>
+                    
+                    <!-- Centro -->
+                    <div class="central-hub">
+                        <span>AletheIA<br>Core</span>
+                    </div>
+                    
+                    <!-- Módulos -->
+                    <div class="module module-1">
+                        <div class="module-icon">
+                            <i class="fas fa-network-wired"></i>
+                        </div>
+                        <div class="module-title">Motor de Simulación</div>
+                        <div class="module-desc">Agentes virtuales con máquinas de estado finito para modelar comportamientos sociales complejos</div>
+                    </div>
+                    
+                    <div class="module module-2">
+                        <div class="module-icon">
+                            <i class="fas fa-search"></i>
+                        </div>
+                        <div class="module-title">Sistema OSINT</div>
+                        <div class="module-desc">Crawling y detección de similitud textual/semántica entre perfiles públicos</div>
+                    </div>
+                    
+                    <div class="module module-3">
+                        <div class="module-icon">
+                            <i class="fas fa-brain"></i>
+                        </div>
+                        <div class="module-title">Generador IA</div>
+                        <div class="module-desc">Generación adaptativa de contenido basada en tendencias actuales con IA contextualizada</div>
+                    </div>
+                    
+                    <div class="module module-4">
+                        <div class="module-icon">
+                            <i class="fas fa-chart-bar"></i>
+                        </div>
+                        <div class="module-title">Dashboard Visual</div>
+                        <div class="module-desc">Visualización en tiempo real de alertas, métricas y simulaciones con actualización automática</div>
+                    </div>
+                </div>
+                
+                <div class="tech-footer">
+                    <div class="tech-icon">
+                        <i class="fas fa-code"></i>
+                    </div>
+                    <div>
+                        Implementado sobre <span class="font-bold">Flask</span>, con una arquitectura <span class="highlight">distribuible</span>, <span class="highlight">escalable</span> y <span class="highlight">extensible</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="logo-watermark">
+                <span class="text-white">AletheIA</span>
+                <span class="text-purple-400">·</span>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

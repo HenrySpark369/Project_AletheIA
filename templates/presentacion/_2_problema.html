@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project AletheIA - El Problema</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+        .slide-container {
+            width: 1280px;
+            min-height: 720px;
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(135deg, #2a3c5c 0%, #3b4f73 100%);
+            color: white;
+        }
+        .gradient-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at bottom right, rgba(138, 79, 255, 0.18) 0%, rgba(42, 60, 92, 0) 70%);
+        }
+        .grid-pattern {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+            background-size: 20px 20px;
+            z-index: 0;
+        }
+        .content {
+            position: relative;
+            z-index: 2;
+            height: 100%;
+            padding: 60px;
+        }
+        .title {
+            font-size: 3.5rem;
+            font-weight: 700;
+            letter-spacing: -1px;
+            color: #ffffff;
+            line-height: 1.1;
+            margin-bottom: 40px;
+        }
+        .problem-container {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+        .problem-card {
+            width: 30%;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 25px;
+            backdrop-filter: blur(5px);
+            border-left: 4px solid;
+            transition: all 0.3s ease;
+        }
+        .problem-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+        .card-1 {
+            border-left-color: #8A4FFF;
+        }
+        .card-2 {
+            border-left-color: #3B82F6;
+        }
+        .card-3 {
+            border-left-color: #10B981;
+        }
+        .card-icon {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+        }
+        .card-title {
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: white;
+        }
+        .card-text {
+            font-size: 1rem;
+            line-height: 1.5;
+            color: #CBD5E0;
+        }
+        .problem-statement {
+            font-size: 1.3rem;
+            line-height: 1.5;
+            max-width: 80%;
+            margin-bottom: 40px;
+            color: #A0AEC0;
+        }
+        .highlight {
+            color: #8A4FFF;
+            font-weight: 600;
+        }
+        .logo-watermark {
+            position: absolute;
+            bottom: 30px;
+            right: 40px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            opacity: 0.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="slide-container">
+        <div class="grid-pattern"></div>
+        <div class="gradient-overlay"></div>
+        <div class="content">
+            <h1 class="title">El Problema: <span class="highlight">Vulnerabilidad Digital</span></h1>
+            
+            <p class="problem-statement">
+                Hoy en día, empresas, investigadores y gobiernos enfrentan un reto común: la incapacidad de detectar de forma eficaz campañas de desinformación, imitadores digitales y bots que manipulan el discurso en redes sociales.
+            </p>
+            
+            <div class="problem-container">
+                <div class="problem-card card-1">
+                    <div class="card-icon text-purple-400">
+                        <i class="fas fa-bullhorn"></i>
+                    </div>
+                    <h3 class="card-title">Desinformación Masiva</h3>
+                    <p class="card-text">
+                        Campañas coordinadas de fake news se propagan a velocidades sin precedentes, afectando reputaciones y mercados antes de poder ser detectadas.
+                    </p>
+                </div>
+                
+                <div class="problem-card card-2">
+                    <div class="card-icon text-blue-400">
+                        <i class="fas fa-user-secret"></i>
+                    </div>
+                    <h3 class="card-title">Clones e Imitadores</h3>
+                    <p class="card-text">
+                        Perfiles falsos que suplantan identidades legítimas generan contenido dañino indistinguible del auténtico, erosionando la confianza digital.
+                    </p>
+                </div>
+                
+                <div class="problem-card card-3">
+                    <div class="card-icon text-green-400">
+                        <i class="fas fa-tools"></i>
+                    </div>
+                    <h3 class="card-title">Herramientas Limitadas</h3>
+                    <p class="card-text">
+                        Las soluciones actuales son reactivas, lentas o inaccesibles para la mayoría, dejando a muchos actores expuestos sin recursos para protegerse.
+                    </p>
+                </div>
+            </div>
+            
+            <div class="logo-watermark">
+                <span class="text-white">AletheIA</span>
+                <span class="text-purple-500">·</span>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

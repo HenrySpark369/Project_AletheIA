@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project AletheIA - Introducción</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+        .slide-container {
+            width: 1280px;
+            min-height: 720px;
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(135deg, #3a4e69 0%, #2a3750 100%);
+            color: white;
+        }
+        .gradient-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at bottom right, rgba(138, 43, 226, 0.18) 0%, rgba(58, 78, 105, 0) 70%);
+        }
+        .grid-pattern {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+            background-size: 20px 20px;
+            z-index: 0;
+        }
+        .content {
+            position: relative;
+            z-index: 2;
+            height: 100%;
+            padding: 60px;
+        }
+        .title {
+            font-size: 5rem;
+            font-weight: 700;
+            letter-spacing: -2px;
+            background: linear-gradient(90deg, #ffffff, #e2e8f0);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            line-height: 1.1;
+        }
+        .subtitle {
+            max-width: 800px;
+            margin-top: 30px;
+            font-size: 1.5rem;
+            line-height: 1.4;
+        }
+        .icon-container {
+            display: flex;
+            margin-top: 60px;
+        }
+        .feature-icon {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-right: 70px;
+        }
+        .icon-circle {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 15px;
+            transition: all 0.3s ease;
+        }
+        .icon-circle:hover {
+            background: rgba(138, 43, 226, 0.2);
+            transform: translateY(-5px);
+        }
+        .icon-label {
+            font-size: 1rem;
+            font-weight: 500;
+            text-align: center;
+        }
+        .logo-watermark {
+            position: absolute;
+            bottom: 30px;
+            right: 40px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            opacity: 0.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="slide-container">
+        <div class="grid-pattern"></div>
+        <div class="gradient-overlay"></div>
+        <div class="content flex flex-col justify-center">
+            <h1 class="title">Project AletheIA</h1>
+            <p class="subtitle text-gray-300">
+                En un mundo donde la desinformación y los clones digitales proliferan, nace una solución disruptiva que combina simulación social, OSINT e IA generativa para anticipar amenazas y proteger la identidad digital en tiempo real.
+            </p>
+            
+            <div class="icon-container">
+                <div class="feature-icon">
+                    <div class="icon-circle">
+                        <i class="fas fa-network-wired text-3xl text-indigo-300"></i>
+                    </div>
+                    <div class="icon-label">Simulación Social</div>
+                </div>
+                <div class="feature-icon">
+                    <div class="icon-circle">
+                        <i class="fas fa-search-location text-3xl text-indigo-300"></i>
+                    </div>
+                    <div class="icon-label">OSINT</div>
+                </div>
+                <div class="feature-icon">
+                    <div class="icon-circle">
+                        <i class="fas fa-brain text-3xl text-indigo-300"></i>
+                    </div>
+                    <div class="icon-label">IA Generativa</div>
+                </div>
+                <div class="feature-icon">
+                    <div class="icon-circle">
+                        <i class="fas fa-shield-alt text-3xl text-indigo-300"></i>
+                    </div>
+                    <div class="icon-label">Protección Digital</div>
+                </div>
+            </div>
+            
+            <div class="logo-watermark">
+                <span class="text-white">AletheIA</span>
+                <span class="text-purple-400">·</span>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

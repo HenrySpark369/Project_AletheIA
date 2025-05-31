@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project AletheIA - Diferenciadores</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+        .slide-container {
+            width: 1280px;
+            min-height: 720px;
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(135deg, #2a3c5c 0%, #3b4f73 100%);
+            color: white;
+        }
+        .gradient-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at bottom right, rgba(138, 79, 255, 0.18) 0%, rgba(42, 60, 92, 0) 70%);
+        }
+        .grid-pattern {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+            background-size: 20px 20px;
+            z-index: 0;
+        }
+        .content {
+            position: relative;
+            z-index: 2;
+            height: 100%;
+            padding: 60px;
+        }
+        .title {
+            font-size: 3.5rem;
+            font-weight: 700;
+            letter-spacing: -1px;
+            color: #ffffff;
+            line-height: 1.1;
+            margin-bottom: 40px;
+        }
+        .highlight {
+            color: #8A4FFF;
+            font-weight: 600;
+        }
+        .logo-watermark {
+            position: absolute;
+            bottom: 30px;
+            right: 40px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            opacity: 0.6;
+        }
+        .diferenciadores-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            margin-top: 10px;
+        }
+        .diferenciador {
+            width: 48%;
+            background: rgba(59, 130, 246, 0.1);
+            border-radius: 16px;
+            margin-bottom: 25px;
+            padding: 30px;
+            position: relative;
+            transition: all 0.3s ease;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+        }
+        .diferenciador::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 3px;
+            width: 100%;
+            background: linear-gradient(90deg, #3B82F6, #8A4FFF);
+        }
+        .diferenciador:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+        .icon-container {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: rgba(138, 79, 255, 0.15);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-right: 25px;
+            flex-shrink: 0;
+            position: relative;
+            z-index: 1;
+        }
+        .icon-container::before {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 2px solid rgba(138, 79, 255, 0.3);
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.1);
+                opacity: 0.5;
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+        .diferenciador-icon {
+            font-size: 2.5rem;
+            color: #8A4FFF;
+        }
+        .diferenciador-content {
+            flex-grow: 1;
+        }
+        .diferenciador-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: white;
+        }
+        .diferenciador-description {
+            font-size: 1rem;
+            line-height: 1.6;
+            color: #CBD5E0;
+        }
+        .intro-text {
+            margin-bottom: 30px;
+            font-size: 1.2rem;
+            line-height: 1.5;
+            color: #A0AEC0;
+            max-width: 80%;
+        }
+    </style>
+</head>
+<body>
+    <div class="slide-container">
+        <div class="grid-pattern"></div>
+        <div class="gradient-overlay"></div>
+        <div class="content">
+            <h1 class="title">Nuestros <span class="highlight">Diferenciadores</span></h1>
+            
+            <p class="intro-text">
+                Lo que distingue a Project AletheIA de otras soluciones en el mercado:
+            </p>
+            
+            <div class="diferenciadores-container">
+                <!-- Precisión en la detección -->
+                <div class="diferenciador">
+                    <div class="icon-container">
+                        <i class="fas fa-bullseye diferenciador-icon"></i>
+                    </div>
+                    <div class="diferenciador-content">
+                        <h3 class="diferenciador-title">Alta Precisión</h3>
+                        <p class="diferenciador-description">
+                            Detección de clones digitales con mínimos falsos positivos gracias a algoritmos de similitud semántica y análisis contextual avanzado.
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- Modularidad -->
+                <div class="diferenciador">
+                    <div class="icon-container">
+                        <i class="fas fa-cubes diferenciador-icon"></i>
+                    </div>
+                    <div class="diferenciador-content">
+                        <h3 class="diferenciador-title">Modularidad</h3>
+                        <p class="diferenciador-description">
+                            Componentes independientes y personalizables que permiten adaptar la plataforma a necesidades específicas sin comprometer la funcionalidad integral.
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- IA Generativa -->
+                <div class="diferenciador">
+                    <div class="icon-container">
+                        <i class="fas fa-brain diferenciador-icon"></i>
+                    </div>
+                    <div class="diferenciador-content">
+                        <h3 class="diferenciador-title">IA Contextualizada</h3>
+                        <p class="diferenciador-description">
+                            Integración de inteligencia artificial generativa que adapta su comportamiento al contexto social, tendencias actuales y patrones históricos.
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- Tiempo Real -->
+                <div class="diferenciador">
+                    <div class="icon-container">
+                        <i class="fas fa-bolt diferenciador-icon"></i>
+                    </div>
+                    <div class="diferenciador-content">
+                        <h3 class="diferenciador-title">Tiempo Real</h3>
+                        <p class="diferenciador-description">
+                            Procesamiento y análisis instantáneo con actualizaciones automáticas, permitiendo intervenciones preventivas ante amenazas emergentes.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="logo-watermark">
+                <span class="text-white">AletheIA</span>
+                <span class="text-purple-400">·</span>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

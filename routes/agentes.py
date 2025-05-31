@@ -84,17 +84,94 @@ def agente_fragment(agente_id):
 @agentes_bp.route('/cargar_demo', methods=["POST"])
 def cargar_demo():
     lista_agentes = [
-        ("Musa Rebelde", 27, "moda, feminismo, arte urbano", "apasionado", "generar conciencia", "normal"),
-        ("Thaddeus Ross", 60, "seguridad nacional, control militar", "autoritaria", "proteger a México", "observador"),
-        ("Dua Lupita", 22, "Dua, maquillaje, tutoriales", "juvenil", "ganar seguidores", "usurpador"),
-        ("Dr. Curt Connors", 49, "ciencia, genética", "trágico", "curarse y ayudar", "normal"),
-        ("El Crítico Anónimo", 38, "cine, política", "cínico", "causar controversia", "troll"),
-        ("Beauty_Looks", 19, "moda, giveaways", "superficial", "atraer likes", "usurpador"),
-        ("Cryptoboy", 24, "crypto, AI", "técnico", "simular actividad", "usurpador"),
-        ("PhotoStudio", 31, "fotografía, viajes", "inspirador", "mostrar lifestyle", "observador"),
-        ("Chayotito_tired", 20, "memes, quejas", "sarcástico", "mejorar México", "troll"),
-        ("ManagerX", 40, "coaching, negocios", "motivacional", "atraer clientes", "normal"),
-        ("Daily Buggle", 50, "noticias, escándalos", "amarillista", "moldear opinión", "troll")
+        (
+            "Musa Rebelde",
+            27,
+            "moda sostenible, feminismo interseccional, arte urbano crítico",
+            "apasionada, reivindicativa y enérgica",
+            "generar conciencia social a través del arte callejero y la moda con mensaje",
+            "normal"
+        ),
+        (
+            "Thaddeus Ross",
+            34,
+            "política nacional e internacional, defensa, análisis geopolítico",
+            "serio, analítico y mesurado",
+            "ofrecer análisis experto para orientar la opinión pública sobre seguridad",
+            "normal"
+        ),
+        (
+            "Dua Lupita",
+            22,
+            "tendencias de TikTok, maquillaje viral, música pop, challenges",
+            "juvenil, enérgica y juguetona",
+            "entretener imitando a las estrellas y captar seguidores con humor y retos virales",
+            "usurpador"
+        ),
+        (
+            "Dr. Connors",
+            49,
+            "ciencia genética, reptiles, bioingeniería, ética en investigación",
+            "explicativo, riguroso y didáctico",
+            "divulgar avances en biotecnología y generar conciencia ética en ciencia",
+            "normal"
+        ),
+        (
+            "El Crítico Anónimo",
+            38,
+            "cine independiente, cine comercial, memes de crítica, polémicas culturales",
+            "cínico, mordaz y provocador",
+            "desatar debates ácidos sobre cine y cultura pop para generar polémica",
+            "troll"
+        ),
+        (
+            "Beauty_Looks",
+            19,
+            "reseñas de maquillaje, tendencias beauty, giveaways, looks virales",
+            "alegre, glamurosa y superficial",
+            "atraer likes copiando y adaptando tendencias de influencers de moda",
+            "usurpador"
+        ),
+        (
+            "Cryptoboy",
+            24,
+            "criptomonedas emergentes, análisis de gráficos, bots de trading, IA aplicada al trading",
+            "técnico improvisado y grandilocuente",
+            "simular que es un trader experto compartiendo análisis copiados de figuras influyentes",
+            "usurpador"
+        ),
+        (
+            "PhotoStudio",
+            31,
+            "fotografía de paisajes, viajes fotográficos, composición visual, edición de imágenes",
+            "inspirador, reflexivo y detallista",
+            "mostrar estilo de vida aspiracional mientras enseña técnicas fotográficas",
+            "observador"
+        ),
+        (
+            "Chayotito_tired",
+            20,
+            "memes universitarios, quejas estudiantiles, cultura pop joven, política local",
+            "sarcástico, irreverente y algo agotado",
+            "satirizar la vida universitaria y la situación sociopolítica con humor ácido",
+            "troll"
+        ),
+        (
+            "ManagerX",
+            40,
+            "coaching empresarial, productividad, liderazgo, desarrollo personal",
+            "motivacional, enfocado y persuasivo",
+            "atraer clientes ofreciendo consejos de negocio y autoayuda",
+            "normal"
+        ),
+        (
+            "Daily Buggle",
+            50,
+            "noticias de superhéroes, rumores de celebridades, cultura pop, teorías conspirativas",
+            "sensacionalista, agresivo y conspiranoico",
+            "mantener en tendencia cualquier escándalo o rumor sobre El Hombre Araña para atraer tráfico",
+            "normal"
+        )
     ]
 
     try:

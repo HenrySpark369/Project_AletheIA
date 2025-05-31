@@ -9,6 +9,8 @@ DB_PATH = config[entorno].DB_PATH
 
 def obtener_conexion():
     conn = sqlite3.connect(DB_PATH, timeout=60)
+    conn.execute("PRAGMA journal_mode=WAL;")
+    conn.execute("PRAGMA synchronous=FULL;")
     conn.row_factory = sqlite3.Row
     return conn
 

@@ -20,8 +20,8 @@ def dashboard_imitadores():
 @imitador_analysis_bp.route('/ejecutar-analisis', methods=['POST'])
 def ejecutar_analisis():
     try:
-        umbral = float(request.form.get('umbral', 0.75))
-        ventana_dias = int(request.form.get('ventana_dias', 180))
+        umbral = float(request.form.get('umbral', 0.30))
+        ventana_dias = int(request.form.get('ventana_dias', 1))
         detector = ImitadorDetectionService()
         agentes = obtener_todos_los_agentes()
 
@@ -39,6 +39,30 @@ def ejecutar_analisis():
             """)
             for row in cursor.fetchall():
                 last_dates[(row[0], row[1])] = row[2]
+
+            # Precargar último score para cada par (basado en la fecha más reciente)
+            last_scores = {}
+            cursor.execute("""
+                SELECT 
+                    CASE WHEN agente_a_id < agente_b_id THEN agente_a_id ELSE agente_b_id END AS id1,
+                    CASE WHEN agente_a_id < agente_b_id THEN agente_b_id ELSE agente_a_id END AS id2,
+                    d.score_total
+                FROM deteccion_imitadores d
+                JOIN (
+                    SELECT 
+                        CASE WHEN agente_a_id < agente_b_id THEN agente_a_id ELSE agente_b_id END AS id1,
+                        CASE WHEN agente_a_id < agente_b_id THEN agente_b_id ELSE agente_a_id END AS id2,
+                        MAX(fecha_analisis) AS max_fecha
+                    FROM deteccion_imitadores
+                    GROUP BY id1, id2
+                ) x ON (
+                    ((d.agente_a_id = x.id1 AND d.agente_b_id = x.id2) 
+                     OR (d.agente_a_id = x.id2 AND d.agente_b_id = x.id1))
+                    AND d.fecha_analisis = x.max_fecha
+                )
+            """)
+            for row in cursor.fetchall():
+                last_scores[(row[0], row[1])] = row[2]
 
 
         def generar_respuesta():
@@ -62,7 +86,7 @@ def ejecutar_analisis():
                 )
                 score_final = (similitud_semantica * 0.7 + similitud_temas * 0.3)
 
-                logging.info(
+                logging.warning(
                     f"[EVAL] A:{agente_a['nombre']} B:{agente_b['nombre']} "
                     f"→ Semántico:{similitud_semantica:.3f}, Temas:{similitud_temas:.3f}, Total:{score_final:.3f}"
                 )
@@ -82,7 +106,13 @@ def ejecutar_analisis():
 
                     # Verificar duplicado usando in-memory fechas
                     fecha_ultimo_analisis = get_last_date(agente_a["id"], agente_b["id"])
-                    if fecha_ultimo_analisis and fecha_mas_reciente <= fecha_ultimo_analisis:
+                    if fecha_ultimo_analisis and fecha_mas_reciente and fecha_mas_reciente <= fecha_ultimo_analisis:
+                        continue
+
+                    # Verificar si el score no ha incrementado desde el último análisis
+                    key = (agente_a["id"], agente_b["id"]) if agente_a["id"] < agente_b["id"] else (agente_b["id"], agente_a["id"])
+                    último_score = last_scores.get(key, 0)
+                    if score_final <= último_score:
                         continue
 
                     # Evitar duplicados en el mismo bloque
@@ -102,6 +132,10 @@ def ejecutar_analisis():
                         "fecha_analisis": fecha_mas_reciente,
                         "posible_imitador": posible_imitador_id
                     })
+                    # Actualizar last_dates para evitar reprocesar este par en el mismo run
+                    key = (agente_a["id"], agente_b["id"]) if agente_a["id"] < agente_b["id"] else (agente_b["id"], agente_a["id"])
+                    last_dates[key] = fecha_mas_reciente
+                    last_scores[key] = score_final
 
                     bloque_count += 1
                     if bloque_count >= bloque_tamano:

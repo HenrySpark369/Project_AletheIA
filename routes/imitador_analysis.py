@@ -8,6 +8,7 @@ from config import config
 from flask import stream_with_context, Response
 from datetime import datetime
 from itertools import combinations
+import logging
 
 imitador_analysis_bp = Blueprint("imitador_analysis", __name__)  
 
@@ -18,81 +19,102 @@ def dashboard_imitadores():
 
 @imitador_analysis_bp.route('/ejecutar-analisis', methods=['POST'])
 def ejecutar_analisis():
-    """Ejecuta el análisis de detección de imitadores en bloques con stream"""
     try:
         umbral = float(request.form.get('umbral', 0.75))
         ventana_dias = int(request.form.get('ventana_dias', 180))
         detector = ImitadorDetectionService()
+        agentes = obtener_todos_los_agentes()
+
+        # Precargar última fecha de análisis para cada par (ordenando ids para normalizar)
+        last_dates = {}
+        with sqlite3.connect(detector.db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT 
+                    CASE WHEN agente_a_id < agente_b_id THEN agente_a_id ELSE agente_b_id END AS id1,
+                    CASE WHEN agente_a_id < agente_b_id THEN agente_b_id ELSE agente_a_id END AS id2,
+                    MAX(fecha_analisis)
+                FROM deteccion_imitadores
+                GROUP BY id1, id2
+            """)
+            for row in cursor.fetchall():
+                last_dates[(row[0], row[1])] = row[2]
+
 
         def generar_respuesta():
             yield "Iniciando análisis por bloques...\n"
-            agentes = obtener_todos_los_agentes()
-            agentes_normales = [a for a in agentes if a.get("tipo_agente") != "imitador"]
-            combinaciones = list(combinations(agentes_normales, 2))
             bloque_tamano = 5
-            total = len(combinaciones)
             contador_total = 0
+            def get_last_date(a_id, b_id):
+                key = (a_id, b_id) if a_id < b_id else (b_id, a_id)
+                return last_dates.get(key)
+            combinaciones_iter = combinations(agentes, 2)
+            resultados_bloque = []
+            bloque_count = 0
 
-            for offset in range(0, total, bloque_tamano):
-                combinaciones_en_bloque = combinaciones[offset:offset + bloque_tamano]
-                resultados = []
+            for agente_a, agente_b in combinaciones_iter:
+                fecha_inicio = get_last_date(agente_a["id"], agente_b["id"])
+                similitud_semantica, fecha_mas_reciente = detector.semantic_service.similitud_semantica_agentes(
+                    agente_a["id"], agente_b["id"], ventana_dias, fecha_inicio
+                )
+                similitud_temas = detector._calcular_similitud_temas(
+                    agente_a["id"], agente_b["id"], ventana_dias
+                )
+                score_final = (similitud_semantica * 0.7 + similitud_temas * 0.3)
 
-                for agente_a, agente_b in combinaciones_en_bloque:
-                    similitud_semantica = detector.semantic_service.similitud_semantica_agentes(
-                        agente_a["id"], agente_b["id"], ventana_dias
-                    )
-                    similitud_temas = detector._calcular_similitud_temas(
-                        agente_a["id"], agente_b["id"], ventana_dias
-                    )
-                    score_final = (similitud_semantica * 0.7 + similitud_temas * 0.3)
+                logging.info(
+                    f"[EVAL] A:{agente_a['nombre']} B:{agente_b['nombre']} "
+                    f"→ Semántico:{similitud_semantica:.3f}, Temas:{similitud_temas:.3f}, Total:{score_final:.3f}"
+                )
 
-                    print(f"[EVAL] A:{agente_a['nombre']} B:{agente_b['nombre']} → Semántico:{similitud_semantica:.3f}, Temas:{similitud_temas:.3f}, Total:{score_final:.3f}")
+                if score_final > umbral:
+                    tipos = (agente_a["tipo_agente"], agente_b["tipo_agente"])
+                    if "imitador" not in tipos:
+                        continue
 
-                    if score_final > umbral:
-                        # Verificar si ya existe el par con fecha actual
-                        with sqlite3.connect(detector.db_path) as conn:
-                            cursor = conn.cursor()
-                            posible_imitador_id = agente_b["id"] if agente_b["tipo_agente"] == "imitador" else agente_a["id"]
+                    if agente_a["tipo_agente"] == "imitador" and agente_b["tipo_agente"] != "imitador":
+                        posible_imitador_id = agente_a["id"]
+                    elif agente_b["tipo_agente"] == "imitador" and agente_a["tipo_agente"] != "imitador":
+                        posible_imitador_id = agente_b["id"]
+                    else:
+                        # Si ambos son "imitador" o ninguno calificado, por defecto asigna agente_a
+                        posible_imitador_id = agente_a["id"]
 
-                            cursor.execute("""
-                                SELECT COUNT(*) FROM deteccion_imitadores
-                                WHERE DATE(fecha_analisis) = DATE('now')
-                                AND (
-                                    (agente_a_id = ? AND agente_b_id = ? AND posible_imitador_id = ?)
-                                    OR
-                                    (agente_a_id = ? AND agente_b_id = ? AND posible_imitador_id = ?)
-                                    OR
-                                    (agente_a_id = ? AND agente_b_id = ?)
-                                    OR
-                                    (agente_a_id = ? AND agente_b_id = ?)
-                                )
-                            """, (
-                                agente_a["id"], agente_b["id"], posible_imitador_id,
-                                agente_b["id"], agente_a["id"], posible_imitador_id,
-                                agente_a["id"], agente_b["id"],
-                                agente_b["id"], agente_a["id"]
-                            ))
-                            resultado_existente = cursor.fetchone()[0]
-                            if resultado_existente > 0:
-                                continue
+                    # Verificar duplicado usando in-memory fechas
+                    fecha_ultimo_analisis = get_last_date(agente_a["id"], agente_b["id"])
+                    if fecha_ultimo_analisis and fecha_mas_reciente <= fecha_ultimo_analisis:
+                        continue
 
-                        if any(r["agente_a"]["id"] == agente_a["id"] and r["agente_b"]["id"] == agente_b["id"] and r["score_total"] == score_final for r in resultados):
-                            continue
+                    # Evitar duplicados en el mismo bloque
+                    if any(
+                        r["agente_a"]["id"] == agente_a["id"] and
+                        r["agente_b"]["id"] == agente_b["id"]
+                        for r in resultados_bloque
+                    ):
+                        continue
 
-                        resultado = {
-                            "agente_a": agente_a,
-                            "agente_b": agente_b,
-                            "score_semantico": similitud_semantica,
-                            "score_temas": similitud_temas,
-                            "score_total": score_final,
-                            "fecha_analisis": datetime.now().isoformat(),
-                            "posible_imitador": posible_imitador_id
-                        }
-                        resultados.append(resultado)
+                    resultados_bloque.append({
+                        "agente_a": agente_a,
+                        "agente_b": agente_b,
+                        "score_semantico": similitud_semantica,
+                        "score_temas": similitud_temas,
+                        "score_total": score_final,
+                        "fecha_analisis": fecha_mas_reciente,
+                        "posible_imitador": posible_imitador_id
+                    })
 
-                detector._guardar_resultados_deteccion(resultados)
-                contador_total += len(resultados)
-                yield f"Bloque {offset//bloque_tamano + 1} procesado. Total acumulado: {contador_total}\n"
+                    bloque_count += 1
+                    if bloque_count >= bloque_tamano:
+                        detector._guardar_resultados_deteccion(resultados_bloque)
+                        contador_total += len(resultados_bloque)
+                        resultados_bloque = []
+                        yield f"Bloque procesado. Total acumulado: {contador_total}\n"
+                        bloque_count = 0
+
+            # Guardar resultados restantes si los hubiera
+            if resultados_bloque:
+                detector._guardar_resultados_deteccion(resultados_bloque)
+                contador_total += len(resultados_bloque)
 
             if contador_total == 0:
                 yield "Análisis completado. No se encontraron coincidencias nuevas.\n"
@@ -102,6 +124,7 @@ def ejecutar_analisis():
         return Response(stream_with_context(generar_respuesta()), mimetype='text/plain')
 
     except Exception as e:
+        logging.exception("Error en ejecutar_analisis")
         return Response(f"Error: {str(e)}\n", mimetype='text/plain', status=500)
 
 @imitador_analysis_bp.route('/resultados-analisis')  

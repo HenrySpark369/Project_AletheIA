@@ -98,6 +98,36 @@ SECRET_KEY = os.environ.get("FLASK_SECRET_KEY", os.urandom(24))
 
 ---
 
+## 🧪 Base de Datos
+
+El sistema utiliza SQLite por defecto (`database.db`). Para reiniciar o inicializar la base de datos:
+
+```bash
+python utils/init_db.py
+```
+
+> Puedes migrar fácilmente a PostgreSQL modificando `config.py` y los modelos SQLAlchemy.
+
+---
+
+### 🧠 Scheduler independiente
+
+Para ejecutar el simulador de agentes como un proceso separado:
+
+```bash
+python scheduler_runner.py
+```
+
+Asegúrate de definir esta variable de entorno antes de correrlo:
+
+```bash
+export ENABLE_SCHEDULER=true
+```
+
+Este proceso se puede mantener activo por separado o gestionarse como servicio externo (ej. PM2, systemd, etc.).
+
+---
+
 ## 🚀 Ejecución
 
 Una vez configurado el entorno y la base de datos:
@@ -134,21 +164,7 @@ gunicorn -w 4 -b 0.0.0.0:5000 "app:create_app()"
 
 Este comando lanza la app con 4 workers usando el factory method `create_app()`.
 
-### 🧠 Scheduler independiente
-
-Para ejecutar el simulador de agentes como un proceso separado:
-
-```bash
-python scheduler_runner.py
-```
-
-Asegúrate de definir esta variable de entorno antes de correrlo:
-
-```bash
-export ENABLE_SCHEDULER=true
-```
-
-Este proceso se puede mantener activo por separado o gestionarse como servicio externo (ej. PM2, systemd, etc.).
+---
 
 ### 🧰 Comandos útiles con Docker
 
@@ -194,6 +210,8 @@ docker exec -it aegisnet_web /bin/bash
 
 > 📝 Asegúrate de tener `Docker` y `docker compose` instalados antes de usar estos comandos.
 
+---
+
 ## 📊 Funcionalidades Principales
 
 | Módulo           | Descripción                                                                 |
@@ -203,18 +221,6 @@ docker exec -it aegisnet_web /bin/bash
 | 🔍 OSINT Clones   | Busca posibles clones digitales en la web y mide su similitud textual.      |
 | 🔥 Tendencias     | Obtiene trending topics por tipo de agente usando Google Trends (Pytrends).|
 | 🖥️ Dashboard      | Visualiza publicaciones, clones detectados y muros de agentes.              |
-
----
-
-## 🧪 Base de Datos
-
-El sistema utiliza SQLite por defecto (`database.db`). Para reiniciar o inicializar la base de datos:
-
-```bash
-python utils/init_db.py
-```
-
-> Puedes migrar fácilmente a PostgreSQL modificando `config.py` y los modelos SQLAlchemy.
 
 ---
 

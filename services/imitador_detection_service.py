@@ -56,16 +56,51 @@ class ImitadorDetectionService:
     def _calcular_similitud_temas(self, agente_id_a, agente_id_b, ventana_dias):  
         """Calcula similitud basada en temas compartidos"""  
         posts_a = self.semantic_service._obtener_posts_agente(agente_id_a, ventana_dias)  
-        posts_b = self.semantic_service._obtener_posts_agente(agente_id_b, ventana_dias)  
-          
+        posts_b = self.semantic_service._obtener_posts_agente(agente_id_b, ventana_dias)
+
+        print(f"[DEBUG _calcular_similitud_temas] Agente A ({agente_id_a}) → {len(posts_a)} posts: {repr(posts_a[:3])}")
+        print(f"[DEBUG _calcular_similitud_temas] Agente B ({agente_id_b}) → {len(posts_b)} posts: {repr(posts_b[:3])}")
+
         if not posts_a or not posts_b:  
             return 0.0  
               
-        temas_a = Counter([post["tema"] for post in posts_a if post.get("tema")])  
-        temas_b = Counter([post["tema"] for post in posts_b if post.get("tema")])  
-          
-        if not temas_a or not temas_b:  
-            return 0.0  
+        # Contar temas de forma robusta según el tipo de cada post
+        def contar_temas(posts):
+            # Si posts está anidado como [(lista_de_posts,)] o [[...]], desanidar un nivel
+            if isinstance(posts, (list, tuple)) and len(posts) == 1:
+                first = posts[0]
+                if isinstance(first, list):
+                    posts = first
+                # Si es tuple con lista adentro, desanidar la tupla
+                elif isinstance(first, (list, tuple)) and len(first) > 0 and isinstance(first[0], dict):
+                    posts = list(first)
+            cnt = Counter()
+            for post in posts:
+                # si es dict
+                if isinstance(post, dict):
+                    tema = post.get("tema")
+                # si es objeto con atributo .tema
+                elif hasattr(post, "tema"):
+                    tema = getattr(post, "tema")
+                # si es lista o tupla (resultado de sqlite), asumimos que el segundo elemento (índice 1) es el tema
+                elif isinstance(post, (list, tuple)) and len(post) > 1:
+                    tema = post[1]
+                else:
+                    continue
+                if tema:
+                    try:
+                        cnt[tema] += 1
+                    except TypeError:
+                        # Si el tema no es hashable, convertirlo a string
+                        tema_str = str(tema)
+                        cnt[tema_str] += 1
+            return cnt
+
+        temas_a = contar_temas(posts_a)
+        temas_b = contar_temas(posts_b)
+
+        if not temas_a or not temas_b:
+            return 0.0
           
         # Similitud de Jaccard  
         interseccion = sum((temas_a & temas_b).values())  
@@ -80,19 +115,19 @@ class ImitadorDetectionService:
               
             # Insertar resultados  
             for resultado in resultados:  
-                cursor.execute("""  
-                    INSERT INTO deteccion_imitadores   
-                    (agente_a_id, agente_b_id, score_semantico, score_temas,   
-                     score_total, posible_imitador_id, fecha_analisis)  
-                    VALUES (?, ?, ?, ?, ?, ?, ?)  
-                """, (  
-                    resultado["agente_a"]["id"],  
-                    resultado["agente_b"]["id"],  
-                    resultado["score_semantico"],  
-                    resultado["score_temas"],  
-                    resultado["score_total"],  
-                    resultado["posible_imitador"],  
-                    resultado["fecha_analisis"]  
-                ))  
+                cursor.execute("""
+                    INSERT INTO deteccion_imitadores
+                    (agente_a_id, agente_b_id, score_semantico, score_temas,
+                     score_total, posible_imitador_id, fecha_analisis)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                """, (
+                    resultado["agente_a"]["id"],
+                    resultado["agente_b"]["id"],
+                    resultado["score_semantico"],
+                    resultado["score_temas"],
+                    resultado["score_total"],
+                    resultado["posible_imitador"],
+                    resultado["fecha_analisis"]
+                ))
               
             conn.commit()

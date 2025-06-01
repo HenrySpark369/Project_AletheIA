@@ -5,6 +5,7 @@
   <meta charset="UTF-8">
   <title>{% block title %}AegisNet{% endblock %}</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  {% block styles %}{% endblock %}
 </head>
 
 <body>
@@ -106,7 +107,7 @@
   </div>
 
 
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-</body>
+    {% block scripts %}{% endblock %}
+  </body>
 
 </html>

@@ -120,7 +120,7 @@
                     <tr>
                         <th>Tipo A \ Tipo B</th>
                         <th>normal</th>
-                        <th>imitador</th>
+                        <th>usurpador</th>
                         <th>troll</th>
                         <th>observador</th>
                     </tr>
@@ -189,6 +189,31 @@
                 }
             });
 
+            // Ejecutar análisis automáticamente cada 5 minutos (300000 ms)
+            setInterval(async () => {
+                const formDataAuto = new FormData(form);
+                try {
+                    const responseAuto = await fetch("{{ url_for('usurpador_analysis.ejecutar_analisis') }}", {
+                        method: "POST",
+                        body: formDataAuto
+                    });
+                    const readerAuto = responseAuto.body.getReader();
+                    const decoderAuto = new TextDecoder("utf-8");
+                    let resultadoParcialAuto = "";
+
+                    while (true) {
+                        const { value: chunkAuto, done: doneAuto } = await readerAuto.read();
+                        if (doneAuto) break;
+                        const decodedChunkAuto = decoderAuto.decode(chunkAuto, { stream: true });
+                        document.getElementById("mensaje-resultado").innerHTML += decodedChunkAuto.replace(/\n/g, "<br>");
+                    }
+
+                    await cargarMetricas();
+                } catch (errorAuto) {
+                    console.error("Error al ejecutar análisis automático:", errorAuto);
+                }
+            }, 300000);
+
             async function cargarMetricas() {
                 const res = await fetch("{{ url_for('usurpador_analysis.metricas_api') }}");
                 const data = await res.json();
@@ -225,7 +250,7 @@
                 });
 
                 // Llenar tabla Distribución de Tipos
-                const tipos = ["normal", "imitador", "troll", "observador"];
+                const tipos = ["normal", "usurpador", "troll", "observador"];
                 const tbodyDist = document.querySelector("#tabla-distribucion-tipos tbody");
                 // Crear matriz inicializada en cero
                 const matriz = {};
@@ -249,7 +274,7 @@
 
                 // Dibujar gráficos
                 dibujarGraficoScores();
-                dibujarGraficoPromedio(data);
+                dibujarGraficoPromedio();
                 dibujarGraficoDeteccionesPorDia(data);
             }
 
@@ -341,46 +366,50 @@
                 });
             }
 
-            // Dibujar gráfica de línea: promedio de Score Total por día
-            function dibujarGraficoPromedio(metricasData) {
-                // Usamos los datos de métricasData.detecciones_por_dia para fechas de días
-                const fechas = (metricasData.detecciones_por_dia ?? []).map(d => d.fecha);
-                const promedios = metricasData.detecciones_por_dia_promedio || []; 
-                // Dado que no devuelve promedio directamente, reutilizamos obtenerDatosComoJSON
-                obtenerDatosComoJSON().then(dataJSON => {
-                    const ctx = document.getElementById("chart-promedio-scores").getContext("2d");
-                    if (chartPromedioInstance) {
-                        chartPromedioInstance.destroy();
-                    }
-                    chartPromedioInstance = new Chart(ctx, {
-                        type: "line",
-                        data: {
-                            labels: dataJSON.fechasUnicas,
-                            datasets: [{
-                                label: "Promedio Score Total por Día",
-                                data: dataJSON.promedioPorFecha,
-                                tension: 0.3,
-                                fill: false,
-                                borderWidth: 2
-                            }]
-                        },
-                        options: {
-                            scales: {
-                                y: {
-                                    beginAtZero: true,
-                                    suggestedMax: 1
-                                }
+            // Dibujar gráfica de línea: promedio de Score Total por hora
+            function dibujarGraficoPromedio() {
+                // Obtener promedios por hora desde el backend
+                fetch("{{ url_for('usurpador_analysis.metricas_por_hora') }}")
+                    .then(response => response.json())
+                    .then(dataHora => {
+                        const horas = dataHora.map(item => item.hora);
+                        const promedios = dataHora.map(item => item.promedio_score);
+                        const ctx = document.getElementById("chart-promedio-scores").getContext("2d");
+                        if (chartPromedioInstance) {
+                            chartPromedioInstance.destroy();
+                        }
+                        chartPromedioInstance = new Chart(ctx, {
+                            type: "line",
+                            data: {
+                                labels: horas,
+                                datasets: [{
+                                    label: "Promedio Score Total por Hora",
+                                    data: promedios,
+                                    tension: 0.3,
+                                    fill: false,
+                                    borderWidth: 2
+                                }]
                             },
-                            plugins: {
-                                tooltip: {
-                                    callbacks: {
-                                        label: ctx => `Promedio: ${ctx.parsed.y.toFixed(3)}`
+                            options: {
+                                scales: {
+                                    y: {
+                                        beginAtZero: true,
+                                        suggestedMax: 1
+                                    }
+                                },
+                                plugins: {
+                                    tooltip: {
+                                        callbacks: {
+                                            label: ctx => `Promedio: ${ctx.parsed.y.toFixed(3)}`
+                                        }
                                     }
                                 }
                             }
-                        }
+                        });
+                    })
+                    .catch(error => {
+                        console.error("Error al obtener métricas por hora:", error);
                     });
-                });
             }
 
             // Dibujar gráfico de barras: Detecciones por día (últimos 7 días)

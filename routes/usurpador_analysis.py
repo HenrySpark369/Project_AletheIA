@@ -409,3 +409,34 @@ def metricas_api():
         })
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+# --- NUEVO ENDPOINT: /metricas-por-hora ---
+@usurpador_analysis_bp.route('/metricas-por-hora')
+def metricas_por_hora():
+    """API para promedio de score total por hora en las últimas 24 horas"""
+    try:
+        entorno = os.getenv("FLASK_ENV", "development")
+        db_path = config[entorno].DB_PATH
+
+        with sqlite3.connect(db_path) as conn:
+            cursor = conn.cursor()
+            # Agrupar por hora usando strftime para formato ISO
+            cursor.execute("""
+                SELECT 
+                    strftime('%Y-%m-%dT%H:00:00', fecha_analisis) AS hora,
+                    ROUND(AVG(score_total), 3) AS promedio_score
+                FROM deteccion_usurpadores
+                WHERE fecha_analisis >= datetime('now', '-1 day')
+                GROUP BY hora
+                ORDER BY hora
+            """)
+            resultados_hora = [
+                {"hora": row[0], "promedio_score": row[1]}
+                for row in (cursor.fetchall() or [])
+            ]
+
+        return jsonify(resultados_hora)
+    except Exception as e:
+        logger.exception("Error en metricas_por_hora")
+        return jsonify({"error": str(e)}), 500

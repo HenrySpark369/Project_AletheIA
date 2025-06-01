@@ -410,8 +410,6 @@ def metricas_api():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-
-# --- NUEVO ENDPOINT: /metricas-por-hora ---
 @usurpador_analysis_bp.route('/metricas-por-hora')
 def metricas_por_hora():
     """API para promedio de score total por hora en las últimas 24 horas"""
@@ -421,7 +419,6 @@ def metricas_por_hora():
 
         with sqlite3.connect(db_path) as conn:
             cursor = conn.cursor()
-            # Agrupar por hora usando strftime para formato ISO
             cursor.execute("""
                 SELECT 
                     strftime('%Y-%m-%dT%H:00:00', fecha_analisis) AS hora,
@@ -437,6 +434,36 @@ def metricas_por_hora():
             ]
 
         return jsonify(resultados_hora)
+    except Exception as e:
+        logger.exception("Error en metricas_por_hora")
+        return jsonify({"error": str(e)}), 500
+
+# --- NUEVO ENDPOINT: /metricas-por-5min ---
+@usurpador_analysis_bp.route('/metricas-por-5min')
+def metricas_por_5min():
+    """API para conteo de detecciones cada 5 minutos en las últimas 4 horas"""
+    try:
+        entorno = os.getenv("FLASK_ENV", "development")
+        db_path = config[entorno].DB_PATH
+
+        with sqlite3.connect(db_path) as conn:
+            cursor = conn.cursor()
+            # Generar conteo por intervalos de 5 minutos en las últimas 4 horas
+            cursor.execute("""
+                SELECT 
+                    strftime('%Y-%m-%dT%H:%M:00', datetime((strftime('%s', fecha_analisis) / 300) * 300, 'unixepoch')) AS intervalo,
+                    COUNT(*) AS cantidad
+                FROM deteccion_usurpadores
+                WHERE fecha_analisis >= datetime('now', '-4 hours')
+                GROUP BY intervalo
+                ORDER BY intervalo
+            """)
+            resultados = [
+                {"intervalo": row[0], "cantidad": row[1]}
+                for row in cursor.fetchall() or []
+            ]
+
+        return jsonify(resultados)
     except Exception as e:
         logger.exception("Error en metricas_por_hora")
         return jsonify({"error": str(e)}), 500

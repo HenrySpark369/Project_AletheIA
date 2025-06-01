@@ -27,6 +27,7 @@ class UsurpadorDetectionService:
         self.db_path = config[entorno].DB_PATH  
         self.semantic_service = SemanticSimilarityService(self.db_path)
         self._asegurar_indice_posts()
+        self._asegurar_indice_deteccion()
           
     def detectar_usurpadores_semanticos(self, umbral_similitud=0.75, ventana_dias=30, bloque_tamano=5):  
         """  
@@ -125,28 +126,40 @@ class UsurpadorDetectionService:
         logger.debug(f"Jaccard temas {agente_id_a} vs {agente_id_b}: {jaccard}")
         return jaccard  
       
-    def _guardar_resultados_deteccion(self, resultados):  
-        """Guarda resultados en base de datos"""  
-        with sqlite3.connect(self.db_path) as conn:  
-            cursor = conn.cursor()    
-              
-            # Insertar resultados  
-            for resultado in resultados:  
+    def _guardar_resultados_deteccion(self, resultados):
+        """Guarda resultados en base de datos usando upsert para evitar duplicados sin importar el orden de IDs."""
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+
+            for resultado in resultados:
+                id_a = resultado["agente_a"]["id"]
+                id_b = resultado["agente_b"]["id"]
+                # Ordenar IDs para garantizar consistencia (id_menor, id_mayor)
+                agente1_id, agente2_id = (id_a, id_b) if id_a < id_b else (id_b, id_a)
+                # El posible usurpador será siempre el de mayor ID (agente2_id)
+                posible_usurpador_id = agente2_id
+
                 cursor.execute("""
                     INSERT INTO deteccion_usurpadores
                     (agente_a_id, agente_b_id, score_semantico, score_temas,
                      score_total, posible_usurpador_id, fecha_analisis)
                     VALUES (?, ?, ?, ?, ?, ?, ?)
+                    ON CONFLICT(agente_a_id, agente_b_id) DO UPDATE SET
+                      score_semantico = excluded.score_semantico,
+                      score_temas     = excluded.score_temas,
+                      score_total     = excluded.score_total,
+                      posible_usurpador_id = excluded.posible_usurpador_id,
+                      fecha_analisis  = excluded.fecha_analisis
                 """, (
-                    resultado["agente_a"]["id"],
-                    resultado["agente_b"]["id"],
+                    agente1_id,
+                    agente2_id,
                     resultado["score_semantico"],
                     resultado["score_temas"],
                     resultado["score_total"],
-                    resultado["posible_usurpador"],
+                    posible_usurpador_id,
                     resultado["fecha_analisis"]
                 ))
-              
+
             conn.commit()
 
     def _asegurar_indice_posts(self):
@@ -156,5 +169,17 @@ class UsurpadorDetectionService:
             cursor.execute("""
                 CREATE INDEX IF NOT EXISTS idx_posts_agente_fecha 
                 ON posts (agente_id, created_at)
+            """)
+            conn.commit()
+
+    def _asegurar_indice_deteccion(self):
+        """Crea un índice único para pares de detección (agente menor, agente mayor)"""
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                CREATE UNIQUE INDEX IF NOT EXISTS idx_unico_pares_usurpacion
+                ON deteccion_usurpadores (
+                    agente_a_id, agente_b_id
+                )
             """)
             conn.commit()

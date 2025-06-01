@@ -10,6 +10,14 @@ from datetime import datetime
 from itertools import combinations
 import logging
 
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
+# (Opcional) Si quieres que se imprima en consola con un formato específico:
+handler = logging.StreamHandler()
+handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s"))
+logger.addHandler(handler)
+
 usurpador_analysis_bp = Blueprint("usurpador_analysis", __name__)  
 
 @usurpador_analysis_bp.route('/analisis-usurpadores')  
@@ -206,41 +214,198 @@ def obtener_resultados():
     except Exception as e:  
         return f"<p style='color:red;'>Error: {str(e)}</p>"  
 
-@usurpador_analysis_bp.route('/metricas-api')  
-def metricas_api():  
-    """API para métricas del dashboard"""  
-    try:  
-        entorno = os.getenv("FLASK_ENV", "development")  
-        db_path = config[entorno].DB_PATH  
-          
-        with sqlite3.connect(db_path) as conn:  
-            cursor = conn.cursor()  
-              
-            # Total de detecciones (solo de la fecha actual)
-            cursor.execute("SELECT COUNT(*) FROM deteccion_usurpadores WHERE DATE(fecha_analisis) = DATE('now')")
-            total_detecciones = cursor.fetchone()[0]
-              
-            # Detecciones por día (últimos 7 días)  
-            cursor.execute("""  
-                SELECT DATE(fecha_analisis) as fecha, COUNT(*) as cantidad  
-                FROM deteccion_usurpadores   
-                WHERE fecha_analisis >= datetime('now', '-7 days')  
-                GROUP BY DATE(fecha_analisis)  
-                ORDER BY fecha  
-            """)  
-            detecciones_por_dia = [{"fecha": row[0], "cantidad": row[1]}   
-                                 for row in cursor.fetchall()]  
-              
-            # Score promedio (solo de la fecha actual)
-            cursor.execute("SELECT AVG(score_total) FROM deteccion_usurpadores WHERE DATE(fecha_analisis) = DATE('now')")
-            score_promedio = cursor.fetchone()[0] or 0
-              
-        return jsonify({  
-            "total_detecciones": total_detecciones,  
-            "detecciones_por_dia": detecciones_por_dia,  
-            "score_promedio": round(score_promedio, 3),  
-            "agentes_analizados": len(obtener_todos_los_agentes())  
-        })  
-          
-    except Exception as e:  
+@usurpador_analysis_bp.route('/metricas-api')
+def metricas_api():
+    """API para métricas del dashboard"""
+    try:
+        logger.debug("Entrando a metricas_api")
+        entorno = os.getenv("FLASK_ENV", "development")
+        db_path = config[entorno].DB_PATH
+
+        with sqlite3.connect(db_path) as conn:
+            cursor = conn.cursor()
+
+            # 1) Total de detecciones (hoy)
+            cursor.execute("""
+                SELECT COUNT(*)
+                FROM deteccion_usurpadores
+                WHERE DATE(fecha_analisis) = DATE('now')
+            """)
+            fila = cursor.fetchone()
+            total_hoy = fila[0] if fila and fila[0] is not None else 0
+            logger.debug(f"total_hoy: {total_hoy}")
+
+            # 2) Total de detecciones (ayer)
+            cursor.execute("""
+                SELECT COUNT(*)
+                FROM deteccion_usurpadores
+                WHERE DATE(fecha_analisis) = DATE('now', '-1 day')
+            """)
+            fila = cursor.fetchone()
+            total_ayer = fila[0] if fila and fila[0] is not None else 0
+            logger.debug(f"total_ayer: {total_ayer}")
+
+            # 3) Variación porcentual de detecciones (hoy vs ayer)
+            if total_ayer == 0:
+                variacion_pct = 100 if total_hoy > 0 else 0
+            else:
+                variacion_pct = round((total_hoy - total_ayer) / total_ayer * 100, 2)
+
+            # 4) Detecciones únicas por posible usurpador (últimos 7 días)
+            cursor.execute("""
+                SELECT posible_usurpador_id, COUNT(*) AS veces
+                FROM deteccion_usurpadores
+                WHERE fecha_analisis >= datetime('now', '-7 days')
+                GROUP BY posible_usurpador_id
+                ORDER BY veces DESC
+                LIMIT 5
+            """)
+            top_sospechosos = []
+            for fila in cursor.fetchall() or []:
+                agente_id = fila[0]
+                veces = fila[1]
+                cursor.execute("SELECT nombre FROM agentes WHERE id = ?", (agente_id,))
+                nombre_row = cursor.fetchone()
+                nombre = nombre_row[0] if nombre_row else "Desconocido"
+                top_sospechosos.append({
+                    "agente_id": agente_id,
+                    "nombre": nombre,
+                    "veces_detectado": veces
+                })
+            logger.debug(f"top_sospechosos: {top_sospechosos}")
+
+            # 5) Score promedio, máximo y mínimo (hoy)
+            cursor.execute("""
+                SELECT 
+                  ROUND(AVG(score_total), 3) AS avg_score,
+                  ROUND(MAX(score_total), 3) AS max_score,
+                  ROUND(MIN(score_total), 3) AS min_score
+                FROM deteccion_usurpadores
+                WHERE DATE(fecha_analisis) = DATE('now')
+            """)
+            avg_max_min = cursor.fetchone() or (0, 0, 0)
+            avg_score_hoy, max_score_hoy, min_score_hoy = avg_max_min
+
+            # 6) Detecciones repetidas vs nuevas (hoy)
+            cursor.execute("""
+                SELECT COUNT(*)
+                FROM deteccion_usurpadores d
+                WHERE DATE(d.fecha_analisis) = DATE('now')
+                  AND EXISTS (
+                    SELECT 1 
+                    FROM deteccion_usurpadores d2
+                    WHERE (
+                      (d.agente_a_id = d2.agente_a_id AND d.agente_b_id = d2.agente_b_id)
+                      OR (d.agente_a_id = d2.agente_b_id AND d.agente_b_id = d2.agente_a_id)
+                    )
+                    AND DATE(d2.fecha_analisis) < DATE('now')
+                  )
+            """)
+            fila = cursor.fetchone()
+            conteo_repetidas = fila[0] if fila and fila[0] is not None else 0
+            logger.debug(f"conteo_repetidas: {conteo_repetidas}")
+            conteo_nuevas = total_hoy - conteo_repetidas
+            pct_nuevas = round((conteo_nuevas / total_hoy) * 100, 2) if total_hoy > 0 else 0
+
+            # 7) Pares analizados vs pares detectados (hoy)
+            cursor.execute("SELECT COUNT(*) FROM agentes")
+            fila = cursor.fetchone()
+            n_agentes = fila[0] if fila and fila[0] is not None else 0
+            logger.debug(f"n_agentes: {n_agentes}")
+            pares_totales = n_agentes * (n_agentes - 1) / 2
+            if pares_totales > 0:
+                pct_pares_detectados = round((total_hoy / pares_totales) * 100, 2)
+            else:
+                pct_pares_detectados = 0
+
+            # 8) Distribución de detecciones por tipo de agente (hoy)
+            cursor.execute("""
+                SELECT 
+                  a1.tipo_agente AS tipo_a, 
+                  a2.tipo_agente AS tipo_b, 
+                  COUNT(*) AS cantidad
+                FROM deteccion_usurpadores d
+                JOIN agentes a1 ON d.agente_a_id = a1.id
+                JOIN agentes a2 ON d.agente_b_id = a2.id
+                WHERE DATE(d.fecha_analisis) = DATE('now')
+                GROUP BY a1.tipo_agente, a2.tipo_agente
+            """)
+            distribucion_tipos = []
+            for fila in cursor.fetchall() or []:
+                distribucion_tipos.append({
+                    "tipo_a": fila[0],
+                    "tipo_b": fila[1],
+                    "cantidad": fila[2]
+                })
+            logger.debug(f"distribucion_tipos: {distribucion_tipos}")
+
+            # 9) Agentes “más críticos” (hoy)
+            cursor.execute("""
+                SELECT agente_id, SUM(veces) AS total_veces 
+                FROM (
+                  SELECT d.agente_a_id AS agente_id, COUNT(*) AS veces
+                  FROM deteccion_usurpadores d
+                  WHERE DATE(d.fecha_analisis) = DATE('now')
+                  GROUP BY d.agente_a_id
+                  UNION ALL
+                  SELECT d.agente_b_id AS agente_id, COUNT(*) AS veces
+                  FROM deteccion_usurpadores d
+                  WHERE DATE(d.fecha_analisis) = DATE('now')
+                  GROUP BY d.agente_b_id
+                )
+                GROUP BY agente_id
+                ORDER BY total_veces DESC
+                LIMIT 5
+            """)
+            top_criticos = []
+            for fila in cursor.fetchall() or []:
+                agente_id = fila[0]
+                cnt = fila[1]
+                cursor.execute("SELECT nombre FROM agentes WHERE id = ?", (agente_id,))
+                nombre_row = cursor.fetchone()
+                nombre = nombre_row[0] if nombre_row else "Desconocido"
+                top_criticos.append({
+                    "agente_id": agente_id,
+                    "nombre": nombre,
+                    "apariciones": cnt
+                })
+            logger.debug(f"top_criticos: {top_criticos}")
+
+            # 10) Detecciones por día (últimos 7 días)
+            cursor.execute("""
+                SELECT DATE(fecha_analisis) as fecha, COUNT(*) as cantidad
+                FROM deteccion_usurpadores
+                WHERE fecha_analisis >= datetime('now', '-7 days')
+                GROUP BY DATE(fecha_analisis)
+                ORDER BY fecha
+            """)
+            detecciones_por_dia = [
+                {"fecha": row[0], "cantidad": row[1]}
+                for row in (cursor.fetchall() or [])
+            ]
+            logger.debug(f"detecciones_por_dia: {detecciones_por_dia}")
+
+            # 11) Agentes analizados (total de agentes en DB)
+            agentes_list = obtener_todos_los_agentes() or []
+            agentes_analizados = len(agentes_list)
+
+        return jsonify({
+            "total_hoy": total_hoy,
+            "total_ayer": total_ayer,
+            "variacion_pct": variacion_pct,
+            "top_sospechosos": top_sospechosos,
+            "avg_score_hoy": avg_score_hoy or 0,
+            "max_score_hoy": max_score_hoy or 0,
+            "min_score_hoy": min_score_hoy or 0,
+            "conteo_repetidas": conteo_repetidas,
+            "conteo_nuevas": conteo_nuevas,
+            "pct_nuevas": pct_nuevas,
+            "pares_totales": pares_totales,
+            "pct_pares_detectados": pct_pares_detectados,
+            "distribucion_tipos": distribucion_tipos,
+            "top_criticos": top_criticos,
+            "detecciones_por_dia": detecciones_por_dia,
+            "agentes_analizados": agentes_analizados
+        })
+    except Exception as e:
         return jsonify({"error": str(e)}), 500

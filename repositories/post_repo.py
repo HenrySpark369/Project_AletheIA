@@ -1,5 +1,6 @@
 # repositories/post_repo.py
-import sqlite3
+import sqlite3  # Keep for row_factory reference
+from db import get_db_connection
 from models.post import Post
 import os
 from config import config
@@ -8,9 +9,7 @@ entorno = os.getenv("FLASK_ENV", "development")
 DB_PATH = config[entorno].DB_PATH
 
 def obtener_conexion():
-    conn = sqlite3.connect(DB_PATH, timeout=60)
-    conn.execute("PRAGMA journal_mode=WAL;")
-    conn.execute("PRAGMA synchronous=FULL;")
+    conn = get_db_connection()
     conn.row_factory = sqlite3.Row
     return conn
 
@@ -82,7 +81,7 @@ def contar_posts():
         return conn.execute("SELECT COUNT(*) FROM posts").fetchone()[0]
 
 def obtener_ultimos_posts_de_agente(agente_id, limite=1):
-    conn = sqlite3.connect(DB_PATH)
+    conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute(
         "SELECT tema, contenido FROM posts WHERE agente_id = ? ORDER BY created_at DESC LIMIT ?",

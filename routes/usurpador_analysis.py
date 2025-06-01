@@ -9,6 +9,7 @@ from flask import stream_with_context, Response
 from datetime import datetime
 from itertools import combinations
 import logging
+from db import get_db_connection
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -35,42 +36,43 @@ def ejecutar_analisis():
 
         # Precargar última fecha de análisis para cada par (ordenando ids para normalizar)
         last_dates = {}
-        with sqlite3.connect(detector.db_path) as conn:
-            cursor = conn.cursor()
-            cursor.execute("""
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT 
+                CASE WHEN agente_a_id < agente_b_id THEN agente_a_id ELSE agente_b_id END AS id1,
+                CASE WHEN agente_a_id < agente_b_id THEN agente_b_id ELSE agente_a_id END AS id2,
+                MAX(fecha_analisis)
+            FROM deteccion_usurpadores
+            GROUP BY id1, id2
+        """)
+        for row in cursor.fetchall():
+            last_dates[(row[0], row[1])] = row[2]
+
+        # Precargar último score para cada par (basado en la fecha más reciente)
+        last_scores = {}
+        cursor.execute("""
+            SELECT 
+                CASE WHEN agente_a_id < agente_b_id THEN agente_a_id ELSE agente_b_id END AS id1,
+                CASE WHEN agente_a_id < agente_b_id THEN agente_b_id ELSE agente_a_id END AS id2,
+                d.score_total
+            FROM deteccion_usurpadores d
+            JOIN (
                 SELECT 
                     CASE WHEN agente_a_id < agente_b_id THEN agente_a_id ELSE agente_b_id END AS id1,
                     CASE WHEN agente_a_id < agente_b_id THEN agente_b_id ELSE agente_a_id END AS id2,
-                    MAX(fecha_analisis)
+                    MAX(fecha_analisis) AS max_fecha
                 FROM deteccion_usurpadores
                 GROUP BY id1, id2
-            """)
-            for row in cursor.fetchall():
-                last_dates[(row[0], row[1])] = row[2]
-
-            # Precargar último score para cada par (basado en la fecha más reciente)
-            last_scores = {}
-            cursor.execute("""
-                SELECT 
-                    CASE WHEN agente_a_id < agente_b_id THEN agente_a_id ELSE agente_b_id END AS id1,
-                    CASE WHEN agente_a_id < agente_b_id THEN agente_b_id ELSE agente_a_id END AS id2,
-                    d.score_total
-                FROM deteccion_usurpadores d
-                JOIN (
-                    SELECT 
-                        CASE WHEN agente_a_id < agente_b_id THEN agente_a_id ELSE agente_b_id END AS id1,
-                        CASE WHEN agente_a_id < agente_b_id THEN agente_b_id ELSE agente_a_id END AS id2,
-                        MAX(fecha_analisis) AS max_fecha
-                    FROM deteccion_usurpadores
-                    GROUP BY id1, id2
-                ) x ON (
-                    ((d.agente_a_id = x.id1 AND d.agente_b_id = x.id2) 
-                     OR (d.agente_a_id = x.id2 AND d.agente_b_id = x.id1))
-                    AND d.fecha_analisis = x.max_fecha
-                )
-            """)
-            for row in cursor.fetchall():
-                last_scores[(row[0], row[1])] = row[2]
+            ) x ON (
+                ((d.agente_a_id = x.id1 AND d.agente_b_id = x.id2) 
+                 OR (d.agente_a_id = x.id2 AND d.agente_b_id = x.id1))
+                AND d.fecha_analisis = x.max_fecha
+            )
+        """)
+        for row in cursor.fetchall():
+            last_scores[(row[0], row[1])] = row[2]
+        conn.close()
 
 
         def generar_respuesta():
@@ -176,23 +178,24 @@ def obtener_resultados():
         entorno = os.getenv("FLASK_ENV", "development")  
         db_path = config[entorno].DB_PATH  
 
-        with sqlite3.connect(db_path) as conn:  
-            conn.row_factory = sqlite3.Row  
-            cursor = conn.cursor()  
-            cursor.execute("""  
-                SELECT di.*,   
-                       a1.nombre as agente_a_nombre,  
-                       a2.nombre as agente_b_nombre,  
-                       a3.nombre as posible_usurpador_nombre  
-                FROM deteccion_usurpadores di  
-                JOIN agentes a1 ON di.agente_a_id = a1.id  
-                JOIN agentes a2 ON di.agente_b_id = a2.id  
-                JOIN agentes a3 ON di.posible_usurpador_id = a3.id  
-                WHERE DATE(di.fecha_analisis) = DATE('now')
-                ORDER BY di.score_total DESC, di.fecha_analisis DESC  
-                LIMIT 50  
-            """)  
-            resultados = [dict(row) for row in cursor.fetchall()]  
+        conn = get_db_connection()
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT di.*,   
+                   a1.nombre as agente_a_nombre,  
+                   a2.nombre as agente_b_nombre,  
+                   a3.nombre as posible_usurpador_nombre  
+            FROM deteccion_usurpadores di  
+            JOIN agentes a1 ON di.agente_a_id = a1.id  
+            JOIN agentes a2 ON di.agente_b_id = a2.id  
+            JOIN agentes a3 ON di.posible_usurpador_id = a3.id  
+            WHERE DATE(di.fecha_analisis) = DATE('now')
+            ORDER BY di.score_total DESC, di.fecha_analisis DESC  
+            LIMIT 50  
+        """)
+        resultados = [dict(row) for row in cursor.fetchall()]
+        conn.close()
 
         if not resultados:  
             return "<p>No se encontraron coincidencias en el análisis actual. Se muestran coincidencias históricas.</p>"  
@@ -222,172 +225,173 @@ def metricas_api():
         entorno = os.getenv("FLASK_ENV", "development")
         db_path = config[entorno].DB_PATH
 
-        with sqlite3.connect(db_path) as conn:
-            cursor = conn.cursor()
+        conn = get_db_connection()
+        cursor = conn.cursor()
 
-            # 1) Total de detecciones (hoy)
-            cursor.execute("""
-                SELECT COUNT(*)
-                FROM deteccion_usurpadores
-                WHERE DATE(fecha_analisis) = DATE('now')
-            """)
-            fila = cursor.fetchone()
-            total_hoy = fila[0] if fila and fila[0] is not None else 0
-            logger.debug(f"total_hoy: {total_hoy}")
+        # 1) Total de detecciones (hoy)
+        cursor.execute("""
+            SELECT COUNT(*)
+            FROM deteccion_usurpadores
+            WHERE DATE(fecha_analisis) = DATE('now')
+        """)
+        fila = cursor.fetchone()
+        total_hoy = fila[0] if fila and fila[0] is not None else 0
+        logger.debug(f"total_hoy: {total_hoy}")
 
-            # 2) Total de detecciones (ayer)
-            cursor.execute("""
-                SELECT COUNT(*)
-                FROM deteccion_usurpadores
-                WHERE DATE(fecha_analisis) = DATE('now', '-1 day')
-            """)
-            fila = cursor.fetchone()
-            total_ayer = fila[0] if fila and fila[0] is not None else 0
-            logger.debug(f"total_ayer: {total_ayer}")
+        # 2) Total de detecciones (ayer)
+        cursor.execute("""
+            SELECT COUNT(*)
+            FROM deteccion_usurpadores
+            WHERE DATE(fecha_analisis) = DATE('now', '-1 day')
+        """)
+        fila = cursor.fetchone()
+        total_ayer = fila[0] if fila and fila[0] is not None else 0
+        logger.debug(f"total_ayer: {total_ayer}")
 
-            # 3) Variación porcentual de detecciones (hoy vs ayer)
-            if total_ayer == 0:
-                variacion_pct = 100 if total_hoy > 0 else 0
-            else:
-                variacion_pct = round((total_hoy - total_ayer) / total_ayer * 100, 2)
+        # 3) Variación porcentual de detecciones (hoy vs ayer)
+        if total_ayer == 0:
+            variacion_pct = 100 if total_hoy > 0 else 0
+        else:
+            variacion_pct = round((total_hoy - total_ayer) / total_ayer * 100, 2)
 
-            # 4) Detecciones únicas por posible usurpador (últimos 7 días)
-            cursor.execute("""
-                SELECT posible_usurpador_id, COUNT(*) AS veces
-                FROM deteccion_usurpadores
-                WHERE fecha_analisis >= datetime('now', '-7 days')
-                GROUP BY posible_usurpador_id
-                ORDER BY veces DESC
-                LIMIT 5
-            """)
-            top_sospechosos = []
-            for fila in cursor.fetchall() or []:
-                agente_id = fila[0]
-                veces = fila[1]
-                cursor.execute("SELECT nombre FROM agentes WHERE id = ?", (agente_id,))
-                nombre_row = cursor.fetchone()
-                nombre = nombre_row[0] if nombre_row else "Desconocido"
-                top_sospechosos.append({
-                    "agente_id": agente_id,
-                    "nombre": nombre,
-                    "veces_detectado": veces
-                })
-            logger.debug(f"top_sospechosos: {top_sospechosos}")
+        # 4) Detecciones únicas por posible usurpador (últimos 7 días)
+        cursor.execute("""
+            SELECT posible_usurpador_id, COUNT(*) AS veces
+            FROM deteccion_usurpadores
+            WHERE fecha_analisis >= datetime('now', '-7 days')
+            GROUP BY posible_usurpador_id
+            ORDER BY veces DESC
+            LIMIT 5
+        """)
+        top_sospechosos = []
+        for fila in cursor.fetchall() or []:
+            agente_id = fila[0]
+            veces = fila[1]
+            cursor.execute("SELECT nombre FROM agentes WHERE id = ?", (agente_id,))
+            nombre_row = cursor.fetchone()
+            nombre = nombre_row[0] if nombre_row else "Desconocido"
+            top_sospechosos.append({
+                "agente_id": agente_id,
+                "nombre": nombre,
+                "veces_detectado": veces
+            })
+        logger.debug(f"top_sospechosos: {top_sospechosos}")
 
-            # 5) Score promedio, máximo y mínimo (hoy)
-            cursor.execute("""
-                SELECT 
-                  ROUND(AVG(score_total), 3) AS avg_score,
-                  ROUND(MAX(score_total), 3) AS max_score,
-                  ROUND(MIN(score_total), 3) AS min_score
-                FROM deteccion_usurpadores
-                WHERE DATE(fecha_analisis) = DATE('now')
-            """)
-            avg_max_min = cursor.fetchone() or (0, 0, 0)
-            avg_score_hoy, max_score_hoy, min_score_hoy = avg_max_min
+        # 5) Score promedio, máximo y mínimo (hoy)
+        cursor.execute("""
+            SELECT 
+              ROUND(AVG(score_total), 3) AS avg_score,
+              ROUND(MAX(score_total), 3) AS max_score,
+              ROUND(MIN(score_total), 3) AS min_score
+            FROM deteccion_usurpadores
+            WHERE DATE(fecha_analisis) = DATE('now')
+        """)
+        avg_max_min = cursor.fetchone() or (0, 0, 0)
+        avg_score_hoy, max_score_hoy, min_score_hoy = avg_max_min
 
-            # 6) Detecciones repetidas vs nuevas (hoy)
-            cursor.execute("""
-                SELECT COUNT(*)
-                FROM deteccion_usurpadores d
-                WHERE DATE(d.fecha_analisis) = DATE('now')
-                  AND EXISTS (
-                    SELECT 1 
-                    FROM deteccion_usurpadores d2
-                    WHERE (
-                      (d.agente_a_id = d2.agente_a_id AND d.agente_b_id = d2.agente_b_id)
-                      OR (d.agente_a_id = d2.agente_b_id AND d.agente_b_id = d2.agente_a_id)
-                    )
-                    AND DATE(d2.fecha_analisis) < DATE('now')
-                  )
-            """)
-            fila = cursor.fetchone()
-            conteo_repetidas = fila[0] if fila and fila[0] is not None else 0
-            logger.debug(f"conteo_repetidas: {conteo_repetidas}")
-            conteo_nuevas = total_hoy - conteo_repetidas
-            pct_nuevas = round((conteo_nuevas / total_hoy) * 100, 2) if total_hoy > 0 else 0
-
-            # 7) Pares analizados vs pares detectados (hoy)
-            cursor.execute("SELECT COUNT(*) FROM agentes")
-            fila = cursor.fetchone()
-            n_agentes = fila[0] if fila and fila[0] is not None else 0
-            logger.debug(f"n_agentes: {n_agentes}")
-            pares_totales = n_agentes * (n_agentes - 1) / 2
-            if pares_totales > 0:
-                pct_pares_detectados = round((total_hoy / pares_totales) * 100, 2)
-            else:
-                pct_pares_detectados = 0
-
-            # 8) Distribución de detecciones por tipo de agente (hoy)
-            cursor.execute("""
-                SELECT 
-                  a1.tipo_agente AS tipo_a, 
-                  a2.tipo_agente AS tipo_b, 
-                  COUNT(*) AS cantidad
-                FROM deteccion_usurpadores d
-                JOIN agentes a1 ON d.agente_a_id = a1.id
-                JOIN agentes a2 ON d.agente_b_id = a2.id
-                WHERE DATE(d.fecha_analisis) = DATE('now')
-                GROUP BY a1.tipo_agente, a2.tipo_agente
-            """)
-            distribucion_tipos = []
-            for fila in cursor.fetchall() or []:
-                distribucion_tipos.append({
-                    "tipo_a": fila[0],
-                    "tipo_b": fila[1],
-                    "cantidad": fila[2]
-                })
-            logger.debug(f"distribucion_tipos: {distribucion_tipos}")
-
-            # 9) Agentes “más críticos” (hoy)
-            cursor.execute("""
-                SELECT agente_id, SUM(veces) AS total_veces 
-                FROM (
-                  SELECT d.agente_a_id AS agente_id, COUNT(*) AS veces
-                  FROM deteccion_usurpadores d
-                  WHERE DATE(d.fecha_analisis) = DATE('now')
-                  GROUP BY d.agente_a_id
-                  UNION ALL
-                  SELECT d.agente_b_id AS agente_id, COUNT(*) AS veces
-                  FROM deteccion_usurpadores d
-                  WHERE DATE(d.fecha_analisis) = DATE('now')
-                  GROUP BY d.agente_b_id
+        # 6) Detecciones repetidas vs nuevas (hoy)
+        cursor.execute("""
+            SELECT COUNT(*)
+            FROM deteccion_usurpadores d
+            WHERE DATE(d.fecha_analisis) = DATE('now')
+              AND EXISTS (
+                SELECT 1 
+                FROM deteccion_usurpadores d2
+                WHERE (
+                  (d.agente_a_id = d2.agente_a_id AND d.agente_b_id = d2.agente_b_id)
+                  OR (d.agente_a_id = d2.agente_b_id AND d.agente_b_id = d2.agente_a_id)
                 )
-                GROUP BY agente_id
-                ORDER BY total_veces DESC
-                LIMIT 5
-            """)
-            top_criticos = []
-            for fila in cursor.fetchall() or []:
-                agente_id = fila[0]
-                cnt = fila[1]
-                cursor.execute("SELECT nombre FROM agentes WHERE id = ?", (agente_id,))
-                nombre_row = cursor.fetchone()
-                nombre = nombre_row[0] if nombre_row else "Desconocido"
-                top_criticos.append({
-                    "agente_id": agente_id,
-                    "nombre": nombre,
-                    "apariciones": cnt
-                })
-            logger.debug(f"top_criticos: {top_criticos}")
+                AND DATE(d2.fecha_analisis) < DATE('now')
+              )
+        """)
+        fila = cursor.fetchone()
+        conteo_repetidas = fila[0] if fila and fila[0] is not None else 0
+        logger.debug(f"conteo_repetidas: {conteo_repetidas}")
+        conteo_nuevas = total_hoy - conteo_repetidas
+        pct_nuevas = round((conteo_nuevas / total_hoy) * 100, 2) if total_hoy > 0 else 0
 
-            # 10) Detecciones por día (últimos 7 días)
-            cursor.execute("""
-                SELECT DATE(fecha_analisis) as fecha, COUNT(*) as cantidad
-                FROM deteccion_usurpadores
-                WHERE fecha_analisis >= datetime('now', '-7 days')
-                GROUP BY DATE(fecha_analisis)
-                ORDER BY fecha
-            """)
-            detecciones_por_dia = [
-                {"fecha": row[0], "cantidad": row[1]}
-                for row in (cursor.fetchall() or [])
-            ]
-            logger.debug(f"detecciones_por_dia: {detecciones_por_dia}")
+        # 7) Pares analizados vs pares detectados (hoy)
+        cursor.execute("SELECT COUNT(*) FROM agentes")
+        fila = cursor.fetchone()
+        n_agentes = fila[0] if fila and fila[0] is not None else 0
+        logger.debug(f"n_agentes: {n_agentes}")
+        pares_totales = n_agentes * (n_agentes - 1) / 2
+        if pares_totales > 0:
+            pct_pares_detectados = round((total_hoy / pares_totales) * 100, 2)
+        else:
+            pct_pares_detectados = 0
 
-            # 11) Agentes analizados (total de agentes en DB)
-            agentes_list = obtener_todos_los_agentes() or []
-            agentes_analizados = len(agentes_list)
+        # 8) Distribución de detecciones por tipo de agente (hoy)
+        cursor.execute("""
+            SELECT 
+              a1.tipo_agente AS tipo_a, 
+              a2.tipo_agente AS tipo_b, 
+              COUNT(*) AS cantidad
+            FROM deteccion_usurpadores d
+            JOIN agentes a1 ON d.agente_a_id = a1.id
+            JOIN agentes a2 ON d.agente_b_id = a2.id
+            WHERE DATE(d.fecha_analisis) = DATE('now')
+            GROUP BY a1.tipo_agente, a2.tipo_agente
+        """)
+        distribucion_tipos = []
+        for fila in cursor.fetchall() or []:
+            distribucion_tipos.append({
+                "tipo_a": fila[0],
+                "tipo_b": fila[1],
+                "cantidad": fila[2]
+            })
+        logger.debug(f"distribucion_tipos: {distribucion_tipos}")
+
+        # 9) Agentes “más críticos” (hoy)
+        cursor.execute("""
+            SELECT agente_id, SUM(veces) AS total_veces 
+            FROM (
+              SELECT d.agente_a_id AS agente_id, COUNT(*) AS veces
+              FROM deteccion_usurpadores d
+              WHERE DATE(d.fecha_analisis) = DATE('now')
+              GROUP BY d.agente_a_id
+              UNION ALL
+              SELECT d.agente_b_id AS agente_id, COUNT(*) AS veces
+              FROM deteccion_usurpadores d
+              WHERE DATE(d.fecha_analisis) = DATE('now')
+              GROUP BY d.agente_b_id
+            )
+            GROUP BY agente_id
+            ORDER BY total_veces DESC
+            LIMIT 5
+        """)
+        top_criticos = []
+        for fila in cursor.fetchall() or []:
+            agente_id = fila[0]
+            cnt = fila[1]
+            cursor.execute("SELECT nombre FROM agentes WHERE id = ?", (agente_id,))
+            nombre_row = cursor.fetchone()
+            nombre = nombre_row[0] if nombre_row else "Desconocido"
+            top_criticos.append({
+                "agente_id": agente_id,
+                "nombre": nombre,
+                "apariciones": cnt
+            })
+        logger.debug(f"top_criticos: {top_criticos}")
+
+        # 10) Detecciones por día (últimos 7 días)
+        cursor.execute("""
+            SELECT DATE(fecha_analisis) as fecha, COUNT(*) as cantidad
+            FROM deteccion_usurpadores
+            WHERE fecha_analisis >= datetime('now', '-7 days')
+            GROUP BY DATE(fecha_analisis)
+            ORDER BY fecha
+        """)
+        detecciones_por_dia = [
+            {"fecha": row[0], "cantidad": row[1]}
+            for row in (cursor.fetchall() or [])
+        ]
+        logger.debug(f"detecciones_por_dia: {detecciones_por_dia}")
+
+        # 11) Agentes analizados (total de agentes en DB)
+        agentes_list = obtener_todos_los_agentes() or []
+        agentes_analizados = len(agentes_list)
+        conn.close()
 
         return jsonify({
             "total_hoy": total_hoy,
@@ -417,22 +421,22 @@ def metricas_por_hora():
         entorno = os.getenv("FLASK_ENV", "development")
         db_path = config[entorno].DB_PATH
 
-        with sqlite3.connect(db_path) as conn:
-            cursor = conn.cursor()
-            cursor.execute("""
-                SELECT 
-                    strftime('%Y-%m-%dT%H:00:00', fecha_analisis) AS hora,
-                    ROUND(AVG(score_total), 3) AS promedio_score
-                FROM deteccion_usurpadores
-                WHERE fecha_analisis >= datetime('now', '-1 day')
-                GROUP BY hora
-                ORDER BY hora
-            """)
-            resultados_hora = [
-                {"hora": row[0], "promedio_score": row[1]}
-                for row in (cursor.fetchall() or [])
-            ]
-
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT 
+                strftime('%Y-%m-%dT%H:00:00', fecha_analisis) AS hora,
+                ROUND(AVG(score_total), 3) AS promedio_score
+            FROM deteccion_usurpadores
+            WHERE fecha_analisis >= datetime('now', '-1 day')
+            GROUP BY hora
+            ORDER BY hora
+        """)
+        resultados_hora = [
+            {"hora": row[0], "promedio_score": row[1]}
+            for row in (cursor.fetchall() or [])
+        ]
+        conn.close()
         return jsonify(resultados_hora)
     except Exception as e:
         logger.exception("Error en metricas_por_hora")
@@ -446,23 +450,23 @@ def metricas_por_5min():
         entorno = os.getenv("FLASK_ENV", "development")
         db_path = config[entorno].DB_PATH
 
-        with sqlite3.connect(db_path) as conn:
-            cursor = conn.cursor()
-            # Generar conteo por intervalos de 5 minutos en las últimas 4 horas
-            cursor.execute("""
-                SELECT 
-                    strftime('%Y-%m-%dT%H:%M:00', datetime((strftime('%s', fecha_analisis) / 300) * 300, 'unixepoch')) AS intervalo,
-                    COUNT(*) AS cantidad
-                FROM deteccion_usurpadores
-                WHERE fecha_analisis >= datetime('now', '-4 hours')
-                GROUP BY intervalo
-                ORDER BY intervalo
-            """)
-            resultados = [
-                {"intervalo": row[0], "cantidad": row[1]}
-                for row in cursor.fetchall() or []
-            ]
-
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        # Generar conteo por intervalos de 5 minutos en las últimas 4 horas
+        cursor.execute("""
+            SELECT 
+                strftime('%Y-%m-%dT%H:%M:00', datetime((strftime('%s', fecha_analisis) / 300) * 300, 'unixepoch')) AS intervalo,
+                COUNT(*) AS cantidad
+            FROM deteccion_usurpadores
+            WHERE fecha_analisis >= datetime('now', '-4 hours')
+            GROUP BY intervalo
+            ORDER BY intervalo
+        """)
+        resultados = [
+            {"intervalo": row[0], "cantidad": row[1]}
+            for row in cursor.fetchall() or []
+        ]
+        conn.close()
         return jsonify(resultados)
     except Exception as e:
         logger.exception("Error en metricas_por_hora")

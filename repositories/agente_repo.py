@@ -1,5 +1,6 @@
 # repositories/agente_repo.py
-import sqlite3
+import sqlite3  # Keep for row_factory reference
+from db import get_db_connection
 import os
 from config import config
 from models.agente import Agente
@@ -9,9 +10,7 @@ entorno = os.getenv("FLASK_ENV", "development")
 DB_PATH = config[entorno].DB_PATH
 
 def obtener_conexion():
-    conn = sqlite3.connect(DB_PATH, timeout=60)
-    conn.execute("PRAGMA journal_mode=WAL;")
-    conn.execute("PRAGMA synchronous=FULL;")
+    conn = get_db_connection()
     conn.row_factory = sqlite3.Row
     return conn
 

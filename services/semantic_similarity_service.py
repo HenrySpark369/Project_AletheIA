@@ -1,5 +1,6 @@
 # services/semantic_similarity_service.py  
 import sqlite3  
+from db import get_db_connection
 import numpy as np  
 from sentence_transformers import SentenceTransformer  
 import logging
@@ -31,28 +32,30 @@ class SemanticSimilarityService:
         # Modelo multilingüe optimizado para español  
         self.model = SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2')  
         # Asegurar la tabla de embeddings cache
-        with sqlite3.connect(self.db_path) as conn:
-            cursor = conn.cursor()
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS embeddings_posts (
-                    post_id TEXT PRIMARY KEY,
-                    embedding BLOB
-                )
-            """)
-            conn.commit()
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS embeddings_posts (
+                post_id TEXT PRIMARY KEY,
+                embedding BLOB
+            )
+        """)
+        conn.commit()
+        conn.close()
           
     def obtener_conexion(self):  
         """Reutiliza el patrón de conexión existente del proyecto"""  
-        conn = sqlite3.connect(self.db_path, timeout=120)  
+        conn = get_db_connection()
         conn.row_factory = sqlite3.Row  
         return conn  
 
     def _get_cached_embedding(self, post_id):
         """Recupera el embedding almacenado para un post_id, o None si no existe."""
-        with sqlite3.connect(self.db_path) as conn:
-            cursor = conn.cursor()
-            cursor.execute("SELECT embedding FROM embeddings_posts WHERE post_id = ?", (post_id,))
-            row = cursor.fetchone()
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT embedding FROM embeddings_posts WHERE post_id = ?", (post_id,))
+        row = cursor.fetchone()
+        conn.close()
         if row:
             return pickle.loads(row[0])
         return None
@@ -60,13 +63,14 @@ class SemanticSimilarityService:
     def _cache_embedding(self, post_id, embedding):
         """Guarda el embedding serializado para un post_id."""
         blob = pickle.dumps(embedding)
-        with sqlite3.connect(self.db_path) as conn:
-            cursor = conn.cursor()
-            cursor.execute("""
-                INSERT OR REPLACE INTO embeddings_posts (post_id, embedding)
-                VALUES (?, ?)
-            """, (post_id, blob))
-            conn.commit()
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT OR REPLACE INTO embeddings_posts (post_id, embedding)
+            VALUES (?, ?)
+        """, (post_id, blob))
+        conn.commit()
+        conn.close()
       
     def calcular_embeddings_posts(self, posts):
         """Calcula embeddings para una lista de posts, usando cache si está disponible."""

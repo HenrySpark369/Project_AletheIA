@@ -2,6 +2,7 @@
 import random
 import os
 from config import config
+from db import get_db_connection
 entorno = os.getenv("FLASK_ENV", "development")
 DB_PATH = config[entorno].DB_PATH
 
@@ -78,39 +79,41 @@ def obtener_tema_en_tendencia_desde_cache(tipo_agente, geo="MX-DIF", ttl_horas=1
     max_retries = 5
     for attempt in range(max_retries):
         try:
-            with sqlite3.connect(DB_PATH, timeout=60) as conn:
-                c = conn.cursor()
-                ahora = datetime.now()
-                limite = ahora - timedelta(hours=ttl_horas)
+            conn = get_db_connection()
+            c = conn.cursor()
+            ahora = datetime.now()
+            limite = ahora - timedelta(hours=ttl_horas)
 
-                # Consultar temas en caché, ordenados por promedio (más relevantes primero)
-                c.execute('''
-                    SELECT resultado, promedio, ultimo_valor FROM tendencias_cache
-                    WHERE tipo_agente = ? AND actualizado_en > ?
-                    ORDER BY promedio DESC, actualizado_en DESC
-                    LIMIT ?
-                ''', (tipo_agente, limite.isoformat(), max_cache_temas))
-                rows = c.fetchall()
+            # Consultar temas en caché, ordenados por promedio (más relevantes primero)
+            c.execute('''
+                SELECT resultado, promedio, ultimo_valor FROM tendencias_cache
+                WHERE tipo_agente = ? AND actualizado_en > ?
+                ORDER BY promedio DESC, actualizado_en DESC
+                LIMIT ?
+            ''', (tipo_agente, limite.isoformat(), max_cache_temas))
+            rows = c.fetchall()
 
-                if rows:
-                    tema_elegido, promedio, ultimo_valor = rows[0]
-                    promedio = float(promedio) if promedio is not None else None
-                    ultimo_valor = float(ultimo_valor) if ultimo_valor is not None else None
-                    print(f"[CACHE] Usando TOP tema en caché para {tipo_agente}: {tema_elegido} (Prom={promedio}, Último={ultimo_valor})")
-                    return tema_elegido, promedio, ultimo_valor
+            if rows:
+                tema_elegido, promedio, ultimo_valor = rows[0]
+                promedio = float(promedio) if promedio is not None else None
+                ultimo_valor = float(ultimo_valor) if ultimo_valor is not None else None
+                print(f"[CACHE] Usando TOP tema en caché para {tipo_agente}: {tema_elegido} (Prom={promedio}, Último={ultimo_valor})")
+                conn.close()
+                return tema_elegido, promedio, ultimo_valor
 
-                # Si no hay temas recientes, obtener nuevo
-                top_tema = tendencias(tipo_agente, geo)
-                if not top_tema:
-                    top_tema = obtener_tema(tipo_agente)
+            # Si no hay temas recientes, obtener nuevo
+            top_tema = tendencias(tipo_agente, geo)
+            if not top_tema:
+                top_tema = obtener_tema(tipo_agente)
 
-                if isinstance(top_tema, tuple) and len(top_tema) == 3:
-                    tema, promedio, ultimo_valor = top_tema
-                    guardar_tema_en_cache(tipo_agente, tema, promedio=promedio, ultimo_valor=ultimo_valor)
-                else:
-                    guardar_tema_en_cache(tipo_agente, top_tema)
-                print(f"[CACHE] Tema guardado para {tipo_agente}: {top_tema}")
-                return top_tema, None, None
+            if isinstance(top_tema, tuple) and len(top_tema) == 3:
+                tema, promedio, ultimo_valor = top_tema
+                guardar_tema_en_cache(tipo_agente, tema, promedio=promedio, ultimo_valor=ultimo_valor)
+            else:
+                guardar_tema_en_cache(tipo_agente, top_tema)
+            print(f"[CACHE] Tema guardado para {tipo_agente}: {top_tema}")
+            conn.close()
+            return top_tema, None, None
 
         except sqlite3.OperationalError as e:
             if "locked" in str(e):
@@ -157,18 +160,19 @@ def obtener_tendencias(tema, geo="MX-DIF", usar_cache=True, ttl_horas=1):
     if usar_cache:
         ahora = datetime.now()
         limite = ahora - timedelta(hours=ttl_horas)
-        with sqlite3.connect(DB_PATH, timeout=60) as conn:
-            c = conn.cursor()
-            c.execute('''
-                SELECT promedio, ultimo_valor FROM tendencias_cache
-                WHERE tema = ? AND actualizado_en > ?
-                ORDER BY actualizado_en DESC LIMIT 1
-            ''', (tema, limite.isoformat()))
-            row = c.fetchone()
-            if row:
-                promedio, ultimo_valor = row
-                print(f"[CACHE] Tema encontrado en cache: {tema} (Prom={promedio}, Último={ultimo_valor})")
-                return tema, float(promedio), float(ultimo_valor)
+        conn = get_db_connection()
+        c = conn.cursor()
+        c.execute('''
+            SELECT promedio, ultimo_valor FROM tendencias_cache
+            WHERE tema = ? AND actualizado_en > ?
+            ORDER BY actualizado_en DESC LIMIT 1
+        ''', (tema, limite.isoformat()))
+        row = c.fetchone()
+        conn.close()
+        if row:
+            promedio, ultimo_valor = row
+            print(f"[CACHE] Tema encontrado en cache: {tema} (Prom={promedio}, Último={ultimo_valor})")
+            return tema, float(promedio), float(ultimo_valor)
 
     # Si no está en caché o no se desea usar
     pytrends = TrendReqSeguro(
@@ -236,22 +240,23 @@ def guardar_tema_en_cache(tipo_agente, tema, promedio=None, ultimo_valor=None):
         promedio = float(promedio)
         ultimo_valor = float(ultimo_valor)
 
-        with sqlite3.connect(DB_PATH, timeout=60) as conn:
-            c = conn.cursor()
-            c.execute("""
-                INSERT OR REPLACE INTO tendencias_cache 
-                (tipo_agente, tema, resultado, actualizado_en, promedio, ultimo_valor)
-                VALUES (?, ?, ?, ?, ?, ?)
-            """, (
-                tipo_agente,
-                tema,
-                tema,  # Si se necesita, se puede hacer JSON aquí
-                ahora,
-                promedio,
-                ultimo_valor
-            ))
-            conn.commit()
-            print(f"[CACHE] Tema guardado: {tema} (Prom={promedio}, Último={ultimo_valor})")
+        conn = get_db_connection()
+        c = conn.cursor()
+        c.execute("""
+            INSERT OR REPLACE INTO tendencias_cache 
+            (tipo_agente, tema, resultado, actualizado_en, promedio, ultimo_valor)
+            VALUES (?, ?, ?, ?, ?, ?)
+        """, (
+            tipo_agente,
+            tema,
+            tema,  # Si se necesita, se puede hacer JSON aquí
+            ahora,
+            promedio,
+            ultimo_valor
+        ))
+        conn.commit()
+        conn.close()
+        print(f"[CACHE] Tema guardado: {tema} (Prom={promedio}, Último={ultimo_valor})")
     except sqlite3.Error as e:
         print(f"[ERROR] No se pudo guardar el tema en cache: {e}")
 

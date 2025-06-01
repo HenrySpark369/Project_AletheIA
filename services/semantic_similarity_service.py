@@ -125,8 +125,8 @@ class SemanticSimilarityService:
             if isinstance(p, dict) and p.get("contenido") and "[Error generando post]" not in p["contenido"]
         ]
 
-        logger.debug(f"Textos válidos A: {textos_a}")
-        logger.debug(f"Textos válidos B: {textos_b}")
+        # logger.debug(f"Textos válidos A: {textos_a}")
+        # logger.debug(f"Textos válidos B: {textos_b}")
 
         if not textos_a or not textos_b:
             fecha_mas_reciente = max(filter(None, [fecha_a, fecha_b]), default=None)

@@ -128,7 +128,7 @@
             <canvas id="chart-promedio-scores"></canvas>
         </div>
         <div class="chart-card">
-            <h3>Detecciones por Día (últimos 7 días)</h3>
+            <h3>Detecciones por cada 5 minutos (últimas 4 horas)</h3>
             <canvas id="chart-detecciones-dia"></canvas>
         </div>
     </div>
@@ -369,7 +369,11 @@
             fetch("{{ url_for('usurpador_analysis.metricas_por_hora') }}")
                 .then(response => response.json())
                 .then(dataHora => {
-                    const horas = dataHora.map(item => item.hora);
+                    const horas = dataHora.map(item => {
+                        const fechaUTC = new Date(item.hora);
+                        const fechaLocal = new Date(fechaUTC.getTime() - fechaUTC.getTimezoneOffset() * 60000);
+                        return fechaLocal.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    });
                     const promedios = dataHora.map(item => item.promedio_score);
                     const ctx = document.getElementById("chart-promedio-scores").getContext("2d");
                     if (chartPromedioInstance) {
@@ -410,38 +414,49 @@
         }
 
         // Dibujar gráfico de barras: Detecciones por día (últimos 7 días)
-        function dibujarGraficoDeteccionesPorDia(metricasData) {
-            const fechas = (metricasData.detecciones_por_dia ?? []).map(d => d.fecha);
-            const cantidades = (metricasData.detecciones_por_dia ?? []).map(d => d.cantidad);
-            const ctx = document.getElementById("chart-detecciones-dia").getContext("2d");
-            if (chartDeteccionesInstance) {
-                chartDeteccionesInstance.destroy();
-            }
-            chartDeteccionesInstance = new Chart(ctx, {
-                type: "bar",
-                data: {
-                    labels: fechas,
-                    datasets: [{
-                        label: "Detect.\ por Día",
-                        data: cantidades,
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    scales: {
-                        y: {
-                            beginAtZero: true
-                        }
-                    },
-                    plugins: {
-                        tooltip: {
-                            callbacks: {
-                                label: ctx => `${ctx.parsed.y} detecciones`
+        function dibujarGraficoDeteccionesPorDia() {
+            fetch("{{ url_for('usurpador_analysis.metricas_por_5min') }}")
+                .then(response => response.json())
+                .then(data => {
+                    const intervalos = data.map(d => {
+                        const fechaUTC = new Date(d.intervalo);
+                        const fechaLocal = new Date(fechaUTC.getTime() - fechaUTC.getTimezoneOffset() * 60000);
+                        return fechaLocal.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    });
+                    const cantidades = data.map(d => d.cantidad);
+                    const ctx = document.getElementById("chart-detecciones-dia").getContext("2d");
+                    if (chartDeteccionesInstance) {
+                        chartDeteccionesInstance.destroy();
+                    }
+                    chartDeteccionesInstance = new Chart(ctx, {
+                        type: "bar",
+                        data: {
+                            labels: intervalos,
+                            datasets: [{
+                                label: "Detect. por 5 mins",
+                                data: cantidades,
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            scales: {
+                                y: {
+                                    beginAtZero: true
+                                }
+                            },
+                            plugins: {
+                                tooltip: {
+                                    callbacks: {
+                                        label: ctx => `${ctx.parsed.y} detecciones`
+                                    }
+                                }
                             }
                         }
-                    }
-                }
-            });
+                    });
+                })
+                .catch(error => {
+                    console.error("Error al obtener detecciones por 5 minutos:", error);
+                });
         }
     });
 </script>

@@ -1,19 +1,24 @@
-<!DOCTYPE html>  
-<html>  
-<head>  
-    <title>Análisis de Usurpadores - Project AletheIA</title>  
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>  
-    <style>  
-        .dashboard-container { max-width: 1200px; margin: 0 auto; padding: 20px; }  
-        .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px; }  
-        .metric-card { background: #f8f9fa; padding: 20px; border-radius: 8px; text-align: center; }  
-        .metric-value {
-            font-size: 24px;
-            font-weight: bold;
-        }
-    </style>  
-</head>  
-<body>  
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Análisis de Usurpadores - Project AletheIA</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .dashboard-container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+        .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .metric-card { background: #f8f9fa; padding: 20px; border-radius: 8px; text-align: center; }
+        .metric-value { font-size: 24px; font-weight: bold; }
+        .tables-container { display: flex; flex-wrap: wrap; gap: 30px; margin-bottom: 30px; }
+        .table-card { flex: 1 1 45%; background: #f8f9fa; padding: 20px; border-radius: 8px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #dee2e6; padding: 8px; text-align: left; }
+        th { background: #e9ecef; }
+        .heatmap-cell { text-align: center; }
+        .charts-container { display: flex; flex-wrap: wrap; gap: 30px; justify-content: space-between; }
+        .chart-card { background: #f8f9fa; padding: 20px; border-radius: 8px; flex: 1 1 45%; }
+    </style>
+</head>
+<body>
     <div class="dashboard-container">
         <h1>Análisis de Usurpadores</h1>
 
@@ -38,12 +43,44 @@
         <h2>Métricas recientes</h2>
         <div class="metrics-grid">
             <div class="metric-card">
-                <div>Total Detecciones</div>
-                <div class="metric-value" id="total-detecciones">-</div>
+                <div>Total Detecciones (hoy)</div>
+                <div class="metric-value" id="total-hoy">-</div>
             </div>
             <div class="metric-card">
-                <div>Score Promedio</div>
-                <div class="metric-value" id="score-promedio">-</div>
+                <div>Total Detecciones (ayer)</div>
+                <div class="metric-value" id="total-ayer">-</div>
+            </div>
+            <div class="metric-card">
+                <div>Variación %</div>
+                <div class="metric-value" id="variacion-pct">-</div>
+            </div>
+            <div class="metric-card">
+                <div>Promedio Score (hoy)</div>
+                <div class="metric-value" id="avg-score-hoy">-</div>
+            </div>
+            <div class="metric-card">
+                <div>Score Máximo (hoy)</div>
+                <div class="metric-value" id="max-score-hoy">-</div>
+            </div>
+            <div class="metric-card">
+                <div>Score Mínimo (hoy)</div>
+                <div class="metric-value" id="min-score-hoy">-</div>
+            </div>
+            <div class="metric-card">
+                <div>Detecciones Nuevas (hoy)</div>
+                <div class="metric-value" id="conteo-nuevas">-</div>
+            </div>
+            <div class="metric-card">
+                <div>Detecciones Repetidas (hoy)</div>
+                <div class="metric-value" id="conteo-repetidas">-</div>
+            </div>
+            <div class="metric-card">
+                <div>% Nuevas (hoy)</div>
+                <div class="metric-value" id="pct-nuevas">-</div>
+            </div>
+            <div class="metric-card">
+                <div>% Pares Detectados</div>
+                <div class="metric-value" id="pct-pares-detectados">-</div>
             </div>
             <div class="metric-card">
                 <div>Agentes Analizados</div>
@@ -53,21 +90,74 @@
 
         <hr>
 
-        <h2>Últimos Resultados</h2>
-        <div class="charts-container" style="display: flex; flex-wrap: wrap; gap: 30px; justify-content: space-between;">
-            <div class="chart-card" style="flex: 1 1 45%; max-width: 45%;">
+        <h2>Top 5 Sospechosos (últimos 7 días)</h2>
+        <div class="tables-container">
+            <div class="table-card">
+                <table id="tabla-top-sospechosos">
+                    <thead>
+                        <tr><th>Agente</th><th>Veces Detectado</th></tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+            <div class="table-card">
+                <h2>Top 5 Críticos (hoy)</h2>
+                <table id="tabla-top-criticos">
+                    <thead>
+                        <tr><th>Agente</th><th>Apariciones</th></tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+        <hr>
+
+        <h2>Distribución de Detecciones por Tipo (hoy)</h2>
+        <div class="table-card" style="margin-bottom: 30px;">
+            <table id="tabla-distribucion-tipos">
+                <thead>
+                    <tr>
+                        <th>Tipo A \ Tipo B</th>
+                        <th>normal</th>
+                        <th>imitador</th>
+                        <th>troll</th>
+                        <th>observador</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Se llenará dinámicamente -->
+                </tbody>
+            </table>
+        </div>
+
+        <hr>
+
+        <h2>Gráficos de Resultados</h2>
+        <div class="charts-container">
+            <div class="chart-card">
+                <h3>Score Total por Par</h3>
                 <canvas id="chart-scores"></canvas>
             </div>
-            <div class="chart-card" style="flex: 1 1 45%; max-width: 45%;">
-                <canvas id="chart-temporal"></canvas>
+            <div class="chart-card">
+                <h3>Promedio Score Total por Día</h3>
+                <canvas id="chart-promedio-scores"></canvas>
+            </div>
+            <div class="chart-card">
+                <h3>Detecciones por Día (últimos 7 días)</h3>
+                <canvas id="chart-detecciones-dia"></canvas>
             </div>
         </div>
     </div>
 
     <script>
+        // Chart.js instance variables
+        let chartScoresInstance = null;
+        let chartPromedioInstance = null;
+        let chartDeteccionesInstance = null;
+
         document.addEventListener("DOMContentLoaded", () => {
-                // Cargar métricas iniciales al cargar la página
-                cargarMetricas();
+            cargarMetricas();
             const form = document.getElementById("analisis-form");
 
             form.addEventListener("submit", async function(e) {
@@ -75,7 +165,7 @@
                 const formData = new FormData(form);
                 document.getElementById("spinner").style.display = "block";
                 try {
-                    const response = await fetch("/ejecutar-analisis", {
+                    const response = await fetch("{{ url_for('usurpador_analysis.ejecutar_analisis') }}", {
                         method: "POST",
                         body: formData
                     });
@@ -100,140 +190,234 @@
             });
 
             async function cargarMetricas() {
-                const res = await fetch("/metricas-api");
+                const res = await fetch("{{ url_for('usurpador_analysis.metricas_api') }}");
                 const data = await res.json();
-                document.getElementById("total-detecciones").textContent = data.total_detecciones;
-                document.getElementById("score-promedio").textContent = data.score_promedio;
+
+                // Asignar valores a los cuadros numéricos
+                document.getElementById("total-hoy").textContent = data.total_hoy;
+                document.getElementById("total-ayer").textContent = data.total_ayer;
+                document.getElementById("variacion-pct").textContent = data.variacion_pct + "%";
+                document.getElementById("avg-score-hoy").textContent = (data.avg_score_hoy ?? 0).toFixed(3);
+                document.getElementById("max-score-hoy").textContent = (data.max_score_hoy ?? 0).toFixed(3);
+                document.getElementById("min-score-hoy").textContent = (data.min_score_hoy ?? 0).toFixed(3);
+                document.getElementById("conteo-nuevas").textContent = data.conteo_nuevas;
+                document.getElementById("conteo-repetidas").textContent = data.conteo_repetidas;
+                document.getElementById("pct-nuevas").textContent = data.pct_nuevas + "%";
+                document.getElementById("pct-pares-detectados").textContent = data.pct_pares_detectados + "%";
                 document.getElementById("agentes-analizados").textContent = data.agentes_analizados;
-            }
 
-    // Función para obtener y parsear la tabla HTML y extraer datos
-    async function obtenerDatosComoJSON() {
-        const res = await fetch("/resultados-analisis");
-        const htmlText = await res.text();
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(htmlText, "text/html");
-        const filas = doc.querySelectorAll("tbody tr");
-        const etiquetas = [];
-        const scores = [];
-        const scoresPorFecha = {};
+                // Llenar tabla Top 5 Sospechosos
+                const tbodySospechosos = document.querySelector("#tabla-top-sospechosos tbody");
+                tbodySospechosos.innerHTML = "";
+                (data.top_sospechosos ?? []).forEach(s => {
+                    const tr = document.createElement("tr");
+                    tr.innerHTML = `<td>${s.nombre}</td><td>${s.veces_detectado}</td>`;
+                    tbodySospechosos.appendChild(tr);
+                });
 
-        filas.forEach(tr => {
-            const celdas = tr.querySelectorAll("td");
-            const agenteA = celdas[0].textContent.trim();
-            const agenteB = celdas[1].textContent.trim();
-            const posibleUsurpador = celdas[2].textContent.trim();
-            // Determinar quién está siendo imitado
-            const imitado = posibleUsurpador === agenteA ? agenteB : agenteA;
-            const scoreTotal = parseFloat(celdas[5].textContent);
-            const fechaRaw = celdas[6].textContent;
-            const diaKey = fechaRaw.split("T")[0];
+                // Llenar tabla Top 5 Críticos
+                const tbodyCriticos = document.querySelector("#tabla-top-criticos tbody");
+                tbodyCriticos.innerHTML = "";
+                (data.top_criticos ?? []).forEach(c => {
+                    const tr = document.createElement("tr");
+                    tr.innerHTML = `<td>${c.nombre}</td><td>${c.apariciones}</td>`;
+                    tbodyCriticos.appendChild(tr);
+                });
 
-            etiquetas.push(`${posibleUsurpador} imita a ${imitado} (${scoreTotal.toFixed(3)})`);
-
-            scores.push(scoreTotal);
-
-            if (!scoresPorFecha[diaKey]) {
-                scoresPorFecha[diaKey] = [];
-            }
-            scoresPorFecha[diaKey].push(scoreTotal);
-        });
-
-        // Ordenar etiquetas y scores de mayor a menor
-        const combinado = etiquetas.map((label, i) => ({ label, score: scores[i] }));
-        combinado.sort((a, b) => b.score - a.score);
-        const ordenEtiquetas = combinado.map(item => item.label);
-        const ordenScores = combinado.map(item => item.score);
-
-        const fechasUnicas = Object.keys(scoresPorFecha).sort((a, b) => new Date(a) - new Date(b));
-        const promedioPorFecha = fechasUnicas.map(fecha => {
-            const arr = scoresPorFecha[fecha];
-            const suma = arr.reduce((acc, v) => acc + v, 0);
-            return +(suma / arr.length).toFixed(3);
-        });
-
-        return {
-            etiquetas: ordenEtiquetas,
-            scores: ordenScores,
-            fechasUnicas,
-            promedioPorFecha
-        };
-    }
-
-    // Dibujar gráfico de barras horizontales: Score Total por par de agentes
-    async function dibujarGraficoScores() {
-        const data = await obtenerDatosComoJSON();
-        const ctx = document.getElementById("chart-scores").getContext("2d");
-
-        new Chart(ctx, {
-            type: "bar",
-            data: {
-                labels: data.etiquetas,
-                datasets: [{
-                    label: "Score Total",
-                    data: data.scores,
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                indexAxis: "y",
-                scales: {
-                    x: {
-                        beginAtZero: true,
-                        suggestedMax: 1
+                // Llenar tabla Distribución de Tipos
+                const tipos = ["normal", "imitador", "troll", "observador"];
+                const tbodyDist = document.querySelector("#tabla-distribucion-tipos tbody");
+                // Crear matriz inicializada en cero
+                const matriz = {};
+                tipos.forEach(a => { matriz[a] = {}; tipos.forEach(b => { matriz[a][b] = 0; }); });
+                (data.distribucion_tipos ?? []).forEach(d => {
+                    if (matriz[d.tipo_a] && matriz[d.tipo_a][d.tipo_b] !== undefined) {
+                        matriz[d.tipo_a][d.tipo_b] = d.cantidad;
                     }
-                },
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        callbacks: {
-                            label: ctx => `Total: ${ctx.parsed.x.toFixed(3)}`
+                });
+                // Construir filas para cada tipo A
+                tbodyDist.innerHTML = "";
+                tipos.forEach(a => {
+                    const tr = document.createElement("tr");
+                    let rowHtml = `<td><strong>${a}</strong></td>`;
+                    tipos.forEach(b => {
+                        rowHtml += `<td class="heatmap-cell">${matriz[a][b]}</td>`;
+                    });
+                    tr.innerHTML = rowHtml;
+                    tbodyDist.appendChild(tr);
+                });
+
+                // Dibujar gráficos
+                dibujarGraficoScores();
+                dibujarGraficoPromedio(data);
+                dibujarGraficoDeteccionesPorDia(data);
+            }
+
+            // Función para obtener y parsear la tabla HTML de resultados y extraer datos
+            async function obtenerDatosComoJSON() {
+                const res = await fetch("{{ url_for('usurpador_analysis.obtener_resultados') }}");
+                const htmlText = await res.text();
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(htmlText, "text/html");
+                const filas = doc.querySelectorAll("tbody tr");
+                const etiquetas = [];
+                const scores = [];
+                const scoresPorFecha = {};
+
+                filas.forEach(tr => {
+                    const celdas = tr.querySelectorAll("td");
+                    const agenteA = celdas[0].textContent.trim();
+                    const agenteB = celdas[1].textContent.trim();
+                    const posibleUsurpador = celdas[2].textContent.trim();
+                    const imitado = posibleUsurpador === agenteA ? agenteB : agenteA;
+                    const scoreTotal = parseFloat(celdas[5].textContent);
+                    const fechaRaw = celdas[6].textContent;
+                    const diaKey = fechaRaw.split("T")[0];
+
+                    etiquetas.push(`${posibleUsurpador} imita a ${imitado} (${scoreTotal.toFixed(3)})`);
+                    scores.push(scoreTotal);
+
+                    if (!scoresPorFecha[diaKey]) {
+                        scoresPorFecha[diaKey] = [];
+                    }
+                    scoresPorFecha[diaKey].push(scoreTotal);
+                });
+
+                // Ordenar etiquetas y scores de mayor a menor
+                const combinado = etiquetas.map((label, i) => ({ label, score: scores[i] }));
+                combinado.sort((a, b) => b.score - a.score);
+                const ordenEtiquetas = combinado.map(item => item.label);
+                const ordenScores = combinado.map(item => item.score);
+
+                const fechasUnicas = Object.keys(scoresPorFecha).sort((a, b) => new Date(a) - new Date(b));
+                const promedioPorFecha = fechasUnicas.map(fecha => {
+                    const arr = scoresPorFecha[fecha];
+                    const suma = arr.reduce((acc, v) => acc + v, 0);
+                    return +(suma / arr.length).toFixed(3);
+                });
+
+                return {
+                    etiquetas: ordenEtiquetas,
+                    scores: ordenScores,
+                    fechasUnicas,
+                    promedioPorFecha
+                };
+            }
+
+            // Dibujar gráfico de barras horizontales: Score Total por par de agentes
+            async function dibujarGraficoScores() {
+                const data = await obtenerDatosComoJSON();
+                const ctx = document.getElementById("chart-scores").getContext("2d");
+                if (chartScoresInstance) {
+                    chartScoresInstance.destroy();
+                }
+                chartScoresInstance = new Chart(ctx, {
+                    type: "bar",
+                    data: {
+                        labels: data.etiquetas,
+                        datasets: [{
+                            label: "Score Total",
+                            data: data.scores,
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        indexAxis: "y",
+                        scales: {
+                            x: {
+                                beginAtZero: true,
+                                suggestedMax: 1
+                            }
+                        },
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: ctx => `Total: ${ctx.parsed.x.toFixed(3)}`
+                                }
+                            }
                         }
                     }
-                }
+                });
             }
-        });
-    }
 
-    // Dibujar gráfica de línea: promedio de Score Total por día
-    async function dibujarGraficoTemporal() {
-        const data = await obtenerDatosComoJSON();
-        const ctx = document.getElementById("chart-temporal").getContext("2d");
-
-        new Chart(ctx, {
-            type: "line",
-            data: {
-                labels: data.fechasUnicas,
-                datasets: [{
-                    label: "Promedio Score Total (día)",
-                    data: data.promedioPorFecha,
-                    tension: 0.3,
-                    fill: false,
-                    borderWidth: 2
-                }]
-            },
-            options: {
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        suggestedMax: 1
+            // Dibujar gráfica de línea: promedio de Score Total por día
+            function dibujarGraficoPromedio(metricasData) {
+                // Usamos los datos de métricasData.detecciones_por_dia para fechas de días
+                const fechas = (metricasData.detecciones_por_dia ?? []).map(d => d.fecha);
+                const promedios = metricasData.detecciones_por_dia_promedio || []; 
+                // Dado que no devuelve promedio directamente, reutilizamos obtenerDatosComoJSON
+                obtenerDatosComoJSON().then(dataJSON => {
+                    const ctx = document.getElementById("chart-promedio-scores").getContext("2d");
+                    if (chartPromedioInstance) {
+                        chartPromedioInstance.destroy();
                     }
-                },
-                plugins: {
-                    tooltip: {
-                        callbacks: {
-                            label: ctx => `Promedio: ${ctx.parsed.y.toFixed(3)}`
+                    chartPromedioInstance = new Chart(ctx, {
+                        type: "line",
+                        data: {
+                            labels: dataJSON.fechasUnicas,
+                            datasets: [{
+                                label: "Promedio Score Total por Día",
+                                data: dataJSON.promedioPorFecha,
+                                tension: 0.3,
+                                fill: false,
+                                borderWidth: 2
+                            }]
+                        },
+                        options: {
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    suggestedMax: 1
+                                }
+                            },
+                            plugins: {
+                                tooltip: {
+                                    callbacks: {
+                                        label: ctx => `Promedio: ${ctx.parsed.y.toFixed(3)}`
+                                    }
+                                }
+                            }
+                        }
+                    });
+                });
+            }
+
+            // Dibujar gráfico de barras: Detecciones por día (últimos 7 días)
+            function dibujarGraficoDeteccionesPorDia(metricasData) {
+                const fechas = (metricasData.detecciones_por_dia ?? []).map(d => d.fecha);
+                const cantidades = (metricasData.detecciones_por_dia ?? []).map(d => d.cantidad);
+                const ctx = document.getElementById("chart-detecciones-dia").getContext("2d");
+                if (chartDeteccionesInstance) {
+                    chartDeteccionesInstance.destroy();
+                }
+                chartDeteccionesInstance = new Chart(ctx, {
+                    type: "bar",
+                    data: {
+                        labels: fechas,
+                        datasets: [{
+                            label: "Detect.\ por Día",
+                            data: cantidades,
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        },
+                        plugins: {
+                            tooltip: {
+                                callbacks: {
+                                    label: ctx => `${ctx.parsed.y} detecciones`
+                                }
+                            }
                         }
                     }
-                }
+                });
             }
-        });
-    }
-
-    // Llamar a las funciones de gráficos después de obtener métricas
-    dibujarGraficoScores();
-    dibujarGraficoTemporal();
         });
     </script>
-</body>  
+</body>
 </html>

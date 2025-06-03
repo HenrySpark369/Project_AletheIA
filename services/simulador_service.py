@@ -121,7 +121,7 @@ class SimuladorDeAgentes:
         return publicaciones
 
     def imitar_agente(self, usurpador):
-        candidatos = [a for a in self.agentes if a["tipo_agente"] == "normal"]
+        candidatos = [a for a in self.agentes if a["tipo_agente"] != "usurpador"]
         if not candidatos:
             return None, {"tema": "tema_general"}
 

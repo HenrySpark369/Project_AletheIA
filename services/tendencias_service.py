@@ -84,11 +84,11 @@ def obtener_tema_en_tendencia_desde_cache(tipo_agente, geo="MX-DIF", ttl_horas=1
             ahora = datetime.now()
             limite = ahora - timedelta(hours=ttl_horas)
 
-            # Consultar temas en caché, ordenados por promedio (más relevantes primero)
+            # Consultar temas en caché, ordenados por ultimo_valor (más relevantes primero)
             c.execute('''
                 SELECT resultado, promedio, ultimo_valor FROM tendencias_cache
                 WHERE tipo_agente = ? AND actualizado_en > ?
-                ORDER BY promedio DESC, actualizado_en DESC
+                ORDER BY ultimo_valor DESC, promedio DESC, actualizado_en DESC
                 LIMIT ?
             ''', (tipo_agente, limite.isoformat(), max_cache_temas))
             rows = c.fetchall()

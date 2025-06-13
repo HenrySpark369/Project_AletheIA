@@ -1,27 +1,29 @@
-# Imagen base ligera de Python 3.8
 FROM python:3.10-slim
 
-# Variables de entorno para mejorar comportamiento de Python
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
+# 1) Variables de entorno
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PORT=5000
 
-# Establece el directorio de trabajo
 WORKDIR /app
 
-# Copia todos los archivos del proyecto al contenedor
+# 2) Instala dependencias C y Python (capa cacheable)
+COPY requirements.txt .
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends build-essential gcc libffi-dev libssl-dev git \
+ && pip install --upgrade pip \
+ && pip install -r requirements.txt \
+ # precarga modelo
+ && python - <<'PYCODE'
+from sentence_transformers import SentenceTransformer
+SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2')
+PYCODE
+ && apt-get purge -y --auto-remove build-essential gcc git \
+ && rm -rf /var/lib/apt/lists/*
+
+# 3) Copia resto del código
 COPY . .
 
-# Instala Git y compiladores necesarios para ciertas librerías (como backports.zoneinfo)
-RUN apt-get update && \
-    apt-get install -y git build-essential gcc libffi-dev libssl-dev && \
-    rm -rf /var/lib/apt/lists/*
-
-# Instala las dependencias de Python
-RUN pip install --upgrade pip && \
-    pip install -r requirements.txt
-
-# Precarga del modelo para evitar timeout de descarga en runtime
-RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2')"
-
-# Comando por defecto para ejecutar el servidor web
-CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:5000", "app:create_app()", "--timeout", "300"]
+# 4) Expón y arranca en $PORT
+EXPOSE $PORT
+CMD ["sh", "-c", "gunicorn -w 4 -b 0.0.0.0:$PORT app:create_app() --timeout 300"]

@@ -9,3 +9,4 @@ sentence-transformers
 scikit-learn
 torch
 gunicorn
+psycopg2

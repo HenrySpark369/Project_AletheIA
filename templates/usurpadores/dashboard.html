@@ -214,7 +214,7 @@
             } catch (errorAuto) {
                 console.error("Error al ejecutar análisis automático:", errorAuto);
             }
-        }, 600000);
+        }, 6000);
 
         async function cargarMetricas() {
             const res = await fetch("{{ url_for('usurpador_analysis.metricas_api') }}");

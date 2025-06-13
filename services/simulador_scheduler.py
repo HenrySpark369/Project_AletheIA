@@ -50,7 +50,7 @@ def iniciar_scheduler():
         return
 
     scheduler = BackgroundScheduler()
-    scheduler.add_job(ejecutar_simulacion_periodica, 'interval', seconds=60, max_instances=1)
+    scheduler.add_job(ejecutar_simulacion_periodica, 'interval', seconds=6, max_instances=2)
     scheduler.add_job(precachear_tendencias, 'interval', hours=1)
     scheduler.start()
     print("[SCHEDULER] Simulación automática activada cada 60 segundos.")

@@ -17,6 +17,6 @@ iniciar_scheduler()
 try:
     import time
     while True:
-        time.sleep(60)
+        time.sleep(6)
 except KeyboardInterrupt:
     print("Scheduler detenido manualmente.")
